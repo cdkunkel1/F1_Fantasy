@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\corbi\\source\\repos\\F1_Fantasy\\F1_Fantasy\\F1_Fantasy.csproj": {}
+    "C:\\Users\\corbi\\source\\MIS 221 Spring 2020\\F1_Fantasy\\F1_Fantasy\\F1_Fantasy\\F1_Fantasy.csproj": {}
   },
   "projects": {
-    "C:\\Users\\corbi\\source\\repos\\F1_Fantasy\\F1_Fantasy\\F1_Fantasy.csproj": {
+    "C:\\Users\\corbi\\source\\MIS 221 Spring 2020\\F1_Fantasy\\F1_Fantasy\\F1_Fantasy\\F1_Fantasy.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\corbi\\source\\repos\\F1_Fantasy\\F1_Fantasy\\F1_Fantasy.csproj",
+        "projectUniqueName": "C:\\Users\\corbi\\source\\MIS 221 Spring 2020\\F1_Fantasy\\F1_Fantasy\\F1_Fantasy\\F1_Fantasy.csproj",
         "projectName": "F1_Fantasy",
-        "projectPath": "C:\\Users\\corbi\\source\\repos\\F1_Fantasy\\F1_Fantasy\\F1_Fantasy.csproj",
+        "projectPath": "C:\\Users\\corbi\\source\\MIS 221 Spring 2020\\F1_Fantasy\\F1_Fantasy\\F1_Fantasy\\F1_Fantasy.csproj",
         "packagesPath": "C:\\Users\\corbi\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\corbi\\source\\repos\\F1_Fantasy\\F1_Fantasy\\obj\\",
+        "outputPath": "C:\\Users\\corbi\\source\\MIS 221 Spring 2020\\F1_Fantasy\\F1_Fantasy\\F1_Fantasy\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
