@@ -1,0 +1,4 @@
+C:\Users\corbi\source\MIS 221 Spring 2020\F1_Fantasy\F1_Fantasy\F1_Fantasy\bin\Debug\netcoreapp3.1\F1_Fantasy.exe
+C:\Users\corbi\source\MIS 221 Spring 2020\F1_Fantasy\F1_Fantasy\F1_Fantasy\obj\Debug\netcoreapp3.1\F1_Fantasy.csprojAssemblyReference.cache
+C:\Users\corbi\source\MIS 221 Spring 2020\F1_Fantasy\F1_Fantasy\F1_Fantasy\obj\Debug\netcoreapp3.1\F1_Fantasy.AssemblyInfoInputs.cache
+C:\Users\corbi\source\MIS 221 Spring 2020\F1_Fantasy\F1_Fantasy\F1_Fantasy\obj\Debug\netcoreapp3.1\F1_Fantasy.AssemblyInfo.cs
