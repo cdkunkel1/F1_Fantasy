@@ -22,7 +22,7 @@ namespace F1_Fantasy
             Player player2 = new Player("Ben");
             Player player3 = new Player("Cory");
 
-            sql = "SELECT * FROM [Formula_1].[dbo].[WDC Rankings]";
+            sql = @"SELECT * FROM [Formula_1].[dbo].[WDC Rankings]";
             WDCRankings(cnn, player1, player2, player3, sql);
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Fastest Pit Stop]"; //SQL statement to select data for fastest pit stop
@@ -45,9 +45,36 @@ namespace F1_Fantasy
         
         public static void WDCRankings(SqlConnection cnn, Player player1, Player player2, Player player3, string sql)
         {
-
+            int[] answersP1 = new int[30]; //There are only 20 drivers, but drivers can change midseason and the number of drivers may change in the future
+            int[] answersP2 = new int[30];
+            int[] answersP3 = new int[30];
+            SqlCommand command = new SqlCommand(sql, cnn); //Executes the sql command to return the table
+            SqlDataReader dataReader = command.ExecuteReader(); //Begin to read the table
+            string nullChecker = "";
+            Boolean stop = false;
+            int[] result = new int[30];
+            int count = 0;
+            while (dataReader.Read() && stop == false) //Reads the next line, stops if the results column is null 
+            {
+                if (count == 0)
+                {
+                    nullChecker = dataReader.GetValue(4).ToString(); //Checks the value in the results column to make sure it is not null
+                    stop = CheckIfNull(nullChecker); //stop will return true if the value is null
+                }
+                if (stop == false)
+                {
+                    result[count] = dataReader.GetInt32(0); //This is the actual result
+                    answersP1[count] = dataReader.GetInt32(1); //These are what the players picked
+                    answersP2[count] = dataReader.GetInt32(2);
+                    answersP3[count] = dataReader.GetInt32(3);
+                }
+                count++;
+            }
+            result[count] = -1; //This will be the sentinel value
+            AddPoints(answersP1, result, player1);
+            AddPoints(answersP2, result, player2);
+            AddPoints(answersP3, result, player3);
         }
-        
         //This method will be used to calculate points from the fastest pit stop question
         public static void FastestPitStop(SqlConnection cnn, Player player1, Player player2, Player player3, string sql, int[] f1Scoring)
         {
@@ -58,8 +85,7 @@ namespace F1_Fantasy
             string nullChecker = "";
             int count = 0;
             Boolean stop = false;
-            dataReader.Read(); //Read the first line
-            do
+            while (dataReader.Read() && stop == false) //Reads the next line, stops if the results column is null
             {
                 if (count == 0)
                 {
@@ -77,9 +103,11 @@ namespace F1_Fantasy
                     results[count] = dataReader.GetValue(3).ToString(); //Every row's results will be stored in this array
                     count++; //Increments to account for a new row
                 }
-            } while (dataReader.Read() && stop == false); //Reads the next line, stops if the results column is null
+            } 
 
-            AddPoints(answers, results, f1Scoring, player1, player2, player3); //Adds points for each player
+            AddPoints(answers[0], results, f1Scoring, player1); //Adds points for each player
+            AddPoints(answers[1], results, f1Scoring, player2); //Adds points for each player
+            AddPoints(answers[2], results, f1Scoring, player3); //Adds points for each player
         }
         //This method will check to see if a string value is null
         public static Boolean CheckIfNull(string nullChecker)
@@ -93,22 +121,33 @@ namespace F1_Fantasy
             return stop;
         }
         //This method will loop through the results and add points for each player
-        public static void AddPoints(string[] answers, string[] results, int[] f1Scoring, Player player1, Player player2, Player player3)
+        public static void AddPoints(string answer, string[] results, int[] f1Scoring, Player player)
         {
             for (int x = 0; x < 10; x++) //Loops through all 10 results
             {
-                if (answers[0] == results[x]) //When the player's answer matches the results, they gain points
+                if (answer == results[x]) //When the player's answer matches the results, they gain points
                 {
-                    player1.UpdatePoints(f1Scoring[x]); //Points are updated with F1 scoring style, meaning 25 for first, 18 for second, etc.
+                    player.UpdatePoints(f1Scoring[x]); //Points are updated with F1 scoring style, meaning 25 for first, 18 for second, etc.
                 }
-                if (answers[1] == results[x]) //Checks Player 2's answer
+            }
+        }
+        //This method will check values within a range and add points
+        public static void AddPoints(int[] answers, int[] results, Player player)
+        {
+            int count = 0;
+            const int CORRECT = 5; //Player gains 5 points if they are exact
+            const int SLIGHTLY_OFF = 2; //Player gains 2 points if they are within 2
+            while (results[count] != -1) //Loops through all the results. -1 is the sentinel value
+            {
+                if (answers[count] == results[count]) //When the player's answer matches the results, they gain points
                 {
-                    player2.UpdatePoints(f1Scoring[x]);
+                    player.UpdatePoints(CORRECT); //If they are exact, the player will gain five points
                 }
-                if (answers[2] == results[x]) //Checks Player 3's answer
+                else if ((results[count] - 2) < answers[count] && answers[count] < (results[count] + 2)) //If the player was within 2, they gain 2 points
                 {
-                    player3.UpdatePoints(f1Scoring[x]);
+                    player.UpdatePoints(SLIGHTLY_OFF);
                 }
+                count++; //Increment the count
             }
         }
     }
