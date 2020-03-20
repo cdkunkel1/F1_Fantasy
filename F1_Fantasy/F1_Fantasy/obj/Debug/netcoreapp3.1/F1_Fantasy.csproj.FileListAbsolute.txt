@@ -2,3 +2,17 @@ C:\Users\corbi\source\MIS 221 Spring 2020\F1_Fantasy\F1_Fantasy\F1_Fantasy\bin\D
 C:\Users\corbi\source\MIS 221 Spring 2020\F1_Fantasy\F1_Fantasy\F1_Fantasy\obj\Debug\netcoreapp3.1\F1_Fantasy.csprojAssemblyReference.cache
 C:\Users\corbi\source\MIS 221 Spring 2020\F1_Fantasy\F1_Fantasy\F1_Fantasy\obj\Debug\netcoreapp3.1\F1_Fantasy.AssemblyInfoInputs.cache
 C:\Users\corbi\source\MIS 221 Spring 2020\F1_Fantasy\F1_Fantasy\F1_Fantasy\obj\Debug\netcoreapp3.1\F1_Fantasy.AssemblyInfo.cs
+C:\Users\corbi\source\MIS 221 Spring 2020\F1_Fantasy\F1_Fantasy\F1_Fantasy\bin\Debug\netcoreapp3.1\F1_Fantasy.deps.json
+C:\Users\corbi\source\MIS 221 Spring 2020\F1_Fantasy\F1_Fantasy\F1_Fantasy\bin\Debug\netcoreapp3.1\F1_Fantasy.runtimeconfig.json
+C:\Users\corbi\source\MIS 221 Spring 2020\F1_Fantasy\F1_Fantasy\F1_Fantasy\bin\Debug\netcoreapp3.1\F1_Fantasy.runtimeconfig.dev.json
+C:\Users\corbi\source\MIS 221 Spring 2020\F1_Fantasy\F1_Fantasy\F1_Fantasy\bin\Debug\netcoreapp3.1\F1_Fantasy.dll
+C:\Users\corbi\source\MIS 221 Spring 2020\F1_Fantasy\F1_Fantasy\F1_Fantasy\bin\Debug\netcoreapp3.1\F1_Fantasy.pdb
+C:\Users\corbi\source\MIS 221 Spring 2020\F1_Fantasy\F1_Fantasy\F1_Fantasy\bin\Debug\netcoreapp3.1\System.Data.SqlClient.dll
+C:\Users\corbi\source\MIS 221 Spring 2020\F1_Fantasy\F1_Fantasy\F1_Fantasy\bin\Debug\netcoreapp3.1\runtimes\win-arm64\native\sni.dll
+C:\Users\corbi\source\MIS 221 Spring 2020\F1_Fantasy\F1_Fantasy\F1_Fantasy\bin\Debug\netcoreapp3.1\runtimes\win-x64\native\sni.dll
+C:\Users\corbi\source\MIS 221 Spring 2020\F1_Fantasy\F1_Fantasy\F1_Fantasy\bin\Debug\netcoreapp3.1\runtimes\win-x86\native\sni.dll
+C:\Users\corbi\source\MIS 221 Spring 2020\F1_Fantasy\F1_Fantasy\F1_Fantasy\bin\Debug\netcoreapp3.1\runtimes\unix\lib\netcoreapp2.1\System.Data.SqlClient.dll
+C:\Users\corbi\source\MIS 221 Spring 2020\F1_Fantasy\F1_Fantasy\F1_Fantasy\bin\Debug\netcoreapp3.1\runtimes\win\lib\netcoreapp2.1\System.Data.SqlClient.dll
+C:\Users\corbi\source\MIS 221 Spring 2020\F1_Fantasy\F1_Fantasy\F1_Fantasy\obj\Debug\netcoreapp3.1\F1_Fantasy.csproj.CopyComplete
+C:\Users\corbi\source\MIS 221 Spring 2020\F1_Fantasy\F1_Fantasy\F1_Fantasy\obj\Debug\netcoreapp3.1\F1_Fantasy.dll
+C:\Users\corbi\source\MIS 221 Spring 2020\F1_Fantasy\F1_Fantasy\F1_Fantasy\obj\Debug\netcoreapp3.1\F1_Fantasy.pdb

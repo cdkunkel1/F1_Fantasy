@@ -33,5 +33,11 @@ namespace F1_Fantasy
         {
             this.points = points;
         }
+        //This will be used to update the points a player has
+        public int UpdatePoints(int changeInPoints)
+        {
+            points += changeInPoints;
+            return points;
+        }
     }
 }
