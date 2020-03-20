@@ -22,10 +22,11 @@ namespace F1_Fantasy
             Player player2 = new Player("Ben");
             Player player3 = new Player("Cory");
 
+            sql = "SELECT * FROM [Formula_1].[dbo].[WDC Rankings]";
+            WDCRankings(cnn, player1, player2, player3, sql);
+
             sql = @"SELECT * FROM [Formula_1].[dbo].[Fastest Pit Stop]"; //SQL statement to select data for fastest pit stop
             FastestPitStop(cnn, player1, player2, player3, sql, f1Scoring);
-
-
 
 
             CloseConnection(cnn);
@@ -41,6 +42,12 @@ namespace F1_Fantasy
         {
             cnn.Close();
         }
+        
+        public static void WDCRankings(SqlConnection cnn, Player player1, Player player2, Player player3, string sql)
+        {
+
+        }
+        
         //This method will be used to calculate points from the fastest pit stop question
         public static void FastestPitStop(SqlConnection cnn, Player player1, Player player2, Player player3, string sql, int[] f1Scoring)
         {
@@ -54,13 +61,12 @@ namespace F1_Fantasy
             dataReader.Read(); //Read the first line
             do
             {
-                nullChecker = dataReader.GetValue(3).ToString(); //Checks the value in the results column to make sure it is not null
-                if (string.IsNullOrEmpty(nullChecker)) //If the results column is null, then no points will be added or subtracted
+                if (count == 0)
                 {
-                    Console.WriteLine("Awaiting results");
-                    stop = true; //Indicates that the loop should stop due to a null value
+                    nullChecker = dataReader.GetValue(3).ToString(); //Checks the value in the results column to make sure it is not null
+                    stop = CheckIfNull(nullChecker); //stop will return true if the value is null
                 }
-                else //This occurs if there are results to read
+                if (stop == false) //This occurs if there are results to read
                 {
                     if (count == 0) //This will establish the players' answers in the first row
                     {
@@ -72,9 +78,25 @@ namespace F1_Fantasy
                     count++; //Increments to account for a new row
                 }
             } while (dataReader.Read() && stop == false); //Reads the next line, stops if the results column is null
-                
+
+            AddPoints(answers, results, f1Scoring, player1, player2, player3); //Adds points for each player
+        }
+        //This method will check to see if a string value is null
+        public static Boolean CheckIfNull(string nullChecker)
+        {
+            Boolean stop = false;
+            if (string.IsNullOrEmpty(nullChecker)) //If the results column is null, then no points will be added or subtracted
+            {
+                Console.WriteLine("Awaiting results");
+                stop = true; //Indicates that the loop should stop due to a null value
+            }
+            return stop;
+        }
+        //This method will loop through the results and add points for each player
+        public static void AddPoints(string[] answers, string[] results, int[] f1Scoring, Player player1, Player player2, Player player3)
+        {
             for (int x = 0; x < 10; x++) //Loops through all 10 results
-                {
+            {
                 if (answers[0] == results[x]) //When the player's answer matches the results, they gain points
                 {
                     player1.UpdatePoints(f1Scoring[x]); //Points are updated with F1 scoring style, meaning 25 for first, 18 for second, etc.
