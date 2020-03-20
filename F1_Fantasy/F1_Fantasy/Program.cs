@@ -30,6 +30,9 @@ namespace F1_Fantasy
 
 
             CloseConnection(cnn);
+
+            F1Car(); //Displays an F1 Car
+            DisplayPoints(player1, player2, player3);
             Console.ReadKey();
         }
         //This method will open a connection to the SQL server
@@ -74,6 +77,9 @@ namespace F1_Fantasy
             AddPoints(answersP1, result, player1);
             AddPoints(answersP2, result, player2);
             AddPoints(answersP3, result, player3);
+            //Close the connection
+            dataReader.Close();
+            command.Dispose();
         }
         //This method will be used to calculate points from the fastest pit stop question
         public static void FastestPitStop(SqlConnection cnn, Player player1, Player player2, Player player3, string sql, int[] f1Scoring)
@@ -108,6 +114,9 @@ namespace F1_Fantasy
             AddPoints(answers[0], results, f1Scoring, player1); //Adds points for each player
             AddPoints(answers[1], results, f1Scoring, player2); //Adds points for each player
             AddPoints(answers[2], results, f1Scoring, player3); //Adds points for each player
+            //Close the connection
+            dataReader.Close();
+            command.Dispose();
         }
         //This method will check to see if a string value is null
         public static Boolean CheckIfNull(string nullChecker)
@@ -115,7 +124,6 @@ namespace F1_Fantasy
             Boolean stop = false;
             if (string.IsNullOrEmpty(nullChecker)) //If the results column is null, then no points will be added or subtracted
             {
-                Console.WriteLine("Awaiting results");
                 stop = true; //Indicates that the loop should stop due to a null value
             }
             return stop;
@@ -149,6 +157,29 @@ namespace F1_Fantasy
                 }
                 count++; //Increment the count
             }
+        }
+        //This will simply output the scores for each player
+        public static void DisplayPoints(Player player1, Player player2, Player player3)
+        {
+            Console.WriteLine(player1.ToString());
+            Console.WriteLine(player2.ToString());
+            Console.WriteLine(player3.ToString());
+        }
+        //Just something I made that I thought was cool
+        public static void F1Car()
+        {
+            Console.WriteLine(@"                                  __________________");
+            Console.WriteLine(@"__________                     /                    |");
+            Console.WriteLine(@"\         \                 /               /      |           _____");
+            Console.WriteLine(@" \         \             /               /         |         /       \ ");
+            Console.WriteLine(@"  \         \  _____  /                /           \      /             \ ");
+            Console.WriteLine(@"    ___    ____                                     ---/                  \ _____   ____ ");
+            Console.WriteLine(@"        /        \            ______________              \________________/     /        \   ");
+            Console.WriteLine(@"       |          |                                                             |          | \ ");
+            Console.WriteLine(@"       |          |                                                             |          |    \  _________ ");
+            Console.WriteLine(@"        \        /  ___________________________________________________________  \        /  ___  |_________| ");
+            Console.WriteLine(@"          ------                                                                   -------     ");
+            Console.WriteLine("\n");
         }
     }
 }

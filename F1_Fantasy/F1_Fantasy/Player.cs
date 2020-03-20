@@ -12,6 +12,7 @@ namespace F1_Fantasy
         public Player(string name)
         {
             this.name = name;
+            this.points = 0;
         }
         //This is a getter for the name
         public string GetName()
@@ -38,6 +39,12 @@ namespace F1_Fantasy
         {
             points += changeInPoints;
             return points;
+        }
+
+        //This method will return the values as a string
+        public string ToString()
+        {
+            return name + ": " + points + "\n";
         }
     }
 }
