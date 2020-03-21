@@ -3,6 +3,7 @@ using System.IO;
 using System.Data;
 using System.Data.SqlClient;
 
+
 namespace F1_Fantasy
 {
     class Program
@@ -29,7 +30,13 @@ namespace F1_Fantasy
             Rankings(cnn, player1, player2, player3, sql);
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Fastest Pit Stop]"; //SQL statement to select data for fastest pit stop
-            FastestPitStop(cnn, player1, player2, player3, sql, f1Scoring);
+            SingleSelection(cnn, player1, player2, player3, sql, f1Scoring);
+
+            sql = @"SELECT * FROM [Formula_1].[dbo].[Most DOD]"; //SQL statement to select data for most driver of the days
+            SingleSelection(cnn, player1, player2, player3, sql, f1Scoring);
+
+            sql = @"SELECT * FROM [Formula_1].[dbo].[Safety/VSC]"; //SQL statement to select data for number of safety cars and VSC's
+            ClosestSelection(cnn, player1, player2, player3, sql, f1Scoring);
 
             CloseConnection(cnn);
 
@@ -87,9 +94,9 @@ namespace F1_Fantasy
             command.Dispose();
         }
         //This method will be used to calculate points from the fastest pit stop question
-        public static void FastestPitStop(SqlConnection cnn, Player player1, Player player2, Player player3, string sql, int[] f1Scoring)
+        public static void SingleSelection(SqlConnection cnn, Player player1, Player player2, Player player3, string sql, int[] f1Scoring)
         {
-            string[] results = new string[10]; //Stores the actual results
+            string[] results = new string[30]; //Stores the actual results
             string[] answers = new string[3]; //Stores the player guesses
             SqlCommand command = new SqlCommand(sql, cnn); //Executes the sql command to return the table
             SqlDataReader dataReader = command.ExecuteReader(); //Begin to read the table
@@ -114,14 +121,52 @@ namespace F1_Fantasy
                     results[count] = dataReader.GetValue(3).ToString(); //Every row's results will be stored in this array
                     count++; //Increments to account for a new row
                 }
-            } 
+            }
+            results[count] = "stop"; //Sentinel Value
 
-            AddPoints(answers[0], results, f1Scoring, player1); //Adds points for each player
-            AddPoints(answers[1], results, f1Scoring, player2); //Adds points for each player
-            AddPoints(answers[2], results, f1Scoring, player3); //Adds points for each player
+            if (stop == false)
+            {
+                AddPoints(answers[0], results, f1Scoring, player1); //Adds points for each player
+                AddPoints(answers[1], results, f1Scoring, player2); //Adds points for each player
+                AddPoints(answers[2], results, f1Scoring, player3); //Adds points for each player
+            }
             //Close the connection
             dataReader.Close();
             command.Dispose();
+        }
+
+        public static void ClosestSelection(SqlConnection cnn, Player player1, Player player2, Player player3, string sql, int[] f1Scoring)
+        {
+            int[] answers = new int[3];
+            int result = 0;
+            string nullChecker = "";
+            SqlCommand command = new SqlCommand(sql, cnn); //Executes the sql command to return the table
+            SqlDataReader dataReader = command.ExecuteReader(); //Begin to read the table
+            Boolean stop = false;
+
+            while (dataReader.Read() && stop == false) //Reads the next line, stops if the results column is null
+            {
+              
+                nullChecker = dataReader.GetValue(3).ToString(); //Checks the value in the results column to make sure it is not null
+                stop = CheckIfNull(nullChecker); //stop will return true if the value is null
+                
+                if (stop == false) //This occurs if there are results to read
+                {
+                    answers[0] = dataReader.GetInt32(0);
+                    answers[1] = dataReader.GetInt32(1);
+                    answers[2] = dataReader.GetInt32(2);
+                }
+                result = dataReader.GetInt32(3); //Every row's results will be stored in this array
+            }
+
+            if (stop == false)
+            {
+                GetDistance(answers, result); //Finds how far the player's were from the results
+                SortAnswers(answers, f1Scoring, player1, player2, player3);
+                AddPoints(answers[0], player1);
+                AddPoints(answers[1], player2);
+                AddPoints(answers[2], player3);
+            }
         }
         //This method will check to see if a string value is null
         public static Boolean CheckIfNull(string nullChecker)
@@ -136,12 +181,14 @@ namespace F1_Fantasy
         //This method will loop through the results and add points for each player
         public static void AddPoints(string answer, string[] results, int[] f1Scoring, Player player)
         {
-            for (int x = 0; x < 10; x++) //Loops through all 10 results
+            int count = 0;
+            while (results[count] != "stop") //Loops through all 10 results
             {
-                if (answer == results[x]) //When the player's answer matches the results, they gain points
+                if (answer == results[count]) //When the player's answer matches the results, they gain points
                 {
-                    player.UpdatePoints(f1Scoring[x]); //Points are updated with F1 scoring style, meaning 25 for first, 18 for second, etc.
+                    player.UpdatePoints(f1Scoring[count]); //Points are updated with F1 scoring style, meaning 25 for first, 18 for second, etc.
                 }
+                count++;
             }
         }
         //This method will check values within a range and add points
@@ -162,6 +209,63 @@ namespace F1_Fantasy
                 }
                 count++; //Increment the count
             }
+        }
+        //Adds a specific number of points for a player
+        public static void AddPoints(int f1Scoring, Player player)
+        {
+            player.UpdatePoints(f1Scoring);
+        }
+        //This method will return the player's answers as their distances from the answer
+        public static void GetDistance(int[] answer, int result)
+        {
+            for (int x = 0; x < answer.Length; x++) 
+            {
+                answer[x] = Math.Abs(result - answer[x]); //Sets the answer array to how far away the guess was from the result
+            }
+        }
+        //Sorts the player's answers from closest to furthest then gives them points
+        public static void SortAnswers(int[]answers, int[] f1Scoring, Player player1, Player player2, Player player3)
+        {
+            int a = answers[0];
+            int b = answers[1];
+            int c = answers[2];
+            //These if statements will sort the numbers from least (a) to greatest (c)
+            if (a > c)
+            {
+                Swap(ref a, ref c);
+            }
+            if (a > b)
+            {
+                Swap(ref a, ref b);
+            }
+            if (b > c)
+            {
+                Swap(ref b, ref c);
+            }          
+            //This will loop through the player's answers and assign them points based on how far their answer was
+            for(int x = 0; x < 3; x++)
+            {
+                if (answers[x] == a) //If the player's answer matched the closest, then the will receive the most points
+                {
+                    answers[x] = f1Scoring[0]; 
+                }
+                else if (answers[x] == b) //If two players guess the same number, then it is possible for them to tie each other
+                {
+                    answers[x] = f1Scoring[1];
+                }
+                else if (answers[x] == c)
+                {
+                    answers[x] = f1Scoring[2];
+                }
+            }            
+        }
+        //Swaps two numbers
+        public static void Swap(ref int a, ref int b)
+        {
+            int temp = a;
+            a = b;
+            b = temp;
+            
         }
         //This will simply output the scores for each player
         public static void DisplayPoints(Player player1, Player player2, Player player3)
