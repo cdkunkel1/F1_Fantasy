@@ -14,7 +14,7 @@ namespace F1_Fantasy
             int[] f1Scoring = { 25, 18, 15, 12, 10, 8, 6, 4, 2, 1 };
             string sql = "";
             string conString = @"Data Source = (LocalDB)\Formula_1; Initial Catalog = Formula_1; Integrated Security = True"; //This is the connection string for the F1 database
-            Boolean guesser = false; //Will be used to indicate a different type of scoring when using the Ranking() method
+            int scoringStyle = 1; //Will be used to indicate a different type of scoring when using the Ranking() method
 
             SqlConnection cnn = new SqlConnection(conString); //Create a SQL Connection object to connect to the F1 Database
             OpenConnection(cnn); //Open the connection to the database
@@ -25,10 +25,10 @@ namespace F1_Fantasy
             Player player3 = new Player("Cory");
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[WDC Rankings]"; //SQL statement to select data for Driver Rankings
-            Rankings(cnn, player1, player2, player3, sql, guesser);
+            Rankings(cnn, player1, player2, player3, sql, scoringStyle);
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Constructor Rankings]"; //SQL statement to select data for constructor rankings
-            Rankings(cnn, player1, player2, player3, sql, guesser);
+            Rankings(cnn, player1, player2, player3, sql, scoringStyle);
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Fastest Pit Stop]"; //SQL statement to select data for fastest pit stop
             SingleSelection(cnn, player1, player2, player3, sql, f1Scoring);
@@ -39,12 +39,24 @@ namespace F1_Fantasy
             sql = @"SELECT * FROM [Formula_1].[dbo].[Safety/VSC]"; //SQL statement to select data for number of safety cars and VSC's
             ClosestSelection(cnn, player1, player2, player3, sql, f1Scoring);
 
-            sql = @"SELECT * FROM [Formula_1].[dbo].[Dominant TM]";
+            sql = @"SELECT * FROM [Formula_1].[dbo].[Dominant TM]"; //SQL statement to select data for the most dominant teammate
             SingleSelection(cnn, player1, player2, player3, sql, f1Scoring);
 
-            sql = @"SELECT * FROM [Formula_1].[dbo].[Podium Drivers]";
-            guesser = true; //Indicates a different type of scoring
-            Rankings(cnn, player1, player2, player3, sql, guesser);
+            sql = @"SELECT * FROM [Formula_1].[dbo].[Podium Drivers]"; //SQL statement to select data for which drivers got a podium
+            scoringStyle = 2; //Indicates a different type of scoring
+            Rankings(cnn, player1, player2, player3, sql, scoringStyle);
+
+            sql = @"SELECT * FROM [Formula_1].[dbo].[Most Penalized T]"; //SQL statement to select data for the most penalized team
+            SingleSelection(cnn, player1, player2, player3, sql, f1Scoring);
+
+            scoringStyle = 3;
+            sql = @"SELECT * FROM [Formula_1].[dbo].[After Six Races]"; //SQL statement to select data for the WDC rankings after six races
+            Rankings(cnn, player1, player2, player3, sql, scoringStyle);
+
+            sql = @"SELECT * FROM [Formula_1].[dbo].[Fewest Laps]"; //SQL statement to select data on the driver with the least amount of laps completed
+            SingleSelection(cnn, player1, player2, player3, sql, f1Scoring); 
+
+
 
             CloseConnection(cnn);
 
@@ -63,7 +75,7 @@ namespace F1_Fantasy
             cnn.Close();
         }
         
-        public static void Rankings(SqlConnection cnn, Player player1, Player player2, Player player3, string sql, Boolean guesser)
+        public static void Rankings(SqlConnection cnn, Player player1, Player player2, Player player3, string sql, int scoringStyle)
         {
             int[] answersP1 = new int[30]; //These are set at 30 to account for any new drivers or teams
             int[] answersP2 = new int[30];
@@ -90,19 +102,26 @@ namespace F1_Fantasy
                 }
                 count++;
             }
-            if (stop == false && guesser == false) //Will not add points if the results values are null
+            if (stop == false && scoringStyle == 1) //Will not add points if the results values are null
             {
                 result[count] = -1; //This will be the sentinel value
                 AddPoints(answersP1, result, player1);
                 AddPoints(answersP2, result, player2);
                 AddPoints(answersP3, result, player3);
             }
-            else if (stop == false && guesser == true)
+            else if (stop == false && scoringStyle == 2)
             {
                 result[count] = -1;
                 ChangePoints(answersP1, result, player1);
                 ChangePoints(answersP2, result, player2);
                 ChangePoints(answersP3, result, player3);
+            }
+            else if (stop == false && scoringStyle == 3)
+            {
+                result[count] = -1;
+                AddPointsV2(answersP1, result, player1);
+                AddPointsV2(answersP1, result, player1);
+                AddPointsV2(answersP1, result, player1);
             }
             //Close the connection
             dataReader.Close();
@@ -252,6 +271,30 @@ namespace F1_Fantasy
         public static void AddPoints(int f1Scoring, Player player)
         {
             player.UpdatePoints(f1Scoring);
+        }
+        //This method will check values within a range and add points
+        public static void AddPointsV2(int[] answers, int[] results, Player player)
+        {
+            int count = 0;
+            const int CORRECT = 5; //Player gains 5 points if they are exact
+            const int ONE_OFF = 3; //Player gains 2 points if they are within 2
+            const int TWO_OFF = 1;
+            while (results[count] != -1) //Loops through all the results. -1 is the sentinel value
+            {
+                if (answers[count] == results[count]) //When the player's answer matches the results, they gain points
+                {
+                    player.UpdatePoints(CORRECT); //If they are exact, the player will gain five points
+                }
+                else if ((results[count] - 1) < answers[count] && answers[count] < (results[count] + 1)) //If the player was within 2, they gain 2 points
+                {
+                    player.UpdatePoints(ONE_OFF);
+                }
+                else if ((results[count] - 2) < answers[count] && answers[count] < (results[count] + 2)) //If the player was within 2, they gain 2 points
+                {
+                    player.UpdatePoints(TWO_OFF);
+                }
+                count++; //Increment the count
+            }
         }
         //This method will return the player's answers as their distances from the answer
         public static void GetDistance(int[] answer, int result)
