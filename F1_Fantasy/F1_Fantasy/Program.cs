@@ -22,12 +22,14 @@ namespace F1_Fantasy
             Player player2 = new Player("Ben");
             Player player3 = new Player("Cory");
 
-            sql = @"SELECT * FROM [Formula_1].[dbo].[WDC Rankings]";
-            WDCRankings(cnn, player1, player2, player3, sql);
+            sql = @"SELECT * FROM [Formula_1].[dbo].[WDC Rankings]"; //SQL statement to select data for Driver Rankings
+            Rankings(cnn, player1, player2, player3, sql);
+
+            sql = @"SELECT * FROM [Formula_1].[dbo].[Constructor Rankings]"; //SQL statement to select data for constructor rankings
+            Rankings(cnn, player1, player2, player3, sql);
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Fastest Pit Stop]"; //SQL statement to select data for fastest pit stop
             FastestPitStop(cnn, player1, player2, player3, sql, f1Scoring);
-
 
             CloseConnection(cnn);
 
@@ -46,9 +48,9 @@ namespace F1_Fantasy
             cnn.Close();
         }
         
-        public static void WDCRankings(SqlConnection cnn, Player player1, Player player2, Player player3, string sql)
+        public static void Rankings(SqlConnection cnn, Player player1, Player player2, Player player3, string sql)
         {
-            int[] answersP1 = new int[30]; //There are only 20 drivers, but drivers can change midseason and the number of drivers may change in the future
+            int[] answersP1 = new int[30]; //These are set at 30 to account for any new drivers or teams
             int[] answersP2 = new int[30];
             int[] answersP3 = new int[30];
             SqlCommand command = new SqlCommand(sql, cnn); //Executes the sql command to return the table
