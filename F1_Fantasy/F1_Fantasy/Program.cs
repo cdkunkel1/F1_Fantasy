@@ -66,17 +66,20 @@ namespace F1_Fantasy
                 }
                 if (stop == false)
                 {
-                    result[count] = dataReader.GetInt32(0); //This is the actual result
+                    result[count] = dataReader.GetInt32(4); //This is the actual result
                     answersP1[count] = dataReader.GetInt32(1); //These are what the players picked
                     answersP2[count] = dataReader.GetInt32(2);
                     answersP3[count] = dataReader.GetInt32(3);
                 }
                 count++;
             }
-            result[count] = -1; //This will be the sentinel value
-            AddPoints(answersP1, result, player1);
-            AddPoints(answersP2, result, player2);
-            AddPoints(answersP3, result, player3);
+            if (stop == false) //Will not add points if the results values are null
+            {
+                result[count] = -1; //This will be the sentinel value
+                AddPoints(answersP1, result, player1);
+                AddPoints(answersP2, result, player2);
+                AddPoints(answersP3, result, player3);
+            }
             //Close the connection
             dataReader.Close();
             command.Dispose();
