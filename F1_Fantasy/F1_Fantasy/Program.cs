@@ -14,6 +14,7 @@ namespace F1_Fantasy
             int[] f1Scoring = { 25, 18, 15, 12, 10, 8, 6, 4, 2, 1 };
             string sql = "";
             string conString = @"Data Source = (LocalDB)\Formula_1; Initial Catalog = Formula_1; Integrated Security = True"; //This is the connection string for the F1 database
+            Boolean guesser = false; //Will be used to indicate a different type of scoring when using the Ranking() method
 
             SqlConnection cnn = new SqlConnection(conString); //Create a SQL Connection object to connect to the F1 Database
             OpenConnection(cnn); //Open the connection to the database
@@ -24,10 +25,10 @@ namespace F1_Fantasy
             Player player3 = new Player("Cory");
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[WDC Rankings]"; //SQL statement to select data for Driver Rankings
-            Rankings(cnn, player1, player2, player3, sql);
+            Rankings(cnn, player1, player2, player3, sql, guesser);
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Constructor Rankings]"; //SQL statement to select data for constructor rankings
-            Rankings(cnn, player1, player2, player3, sql);
+            Rankings(cnn, player1, player2, player3, sql, guesser);
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Fastest Pit Stop]"; //SQL statement to select data for fastest pit stop
             SingleSelection(cnn, player1, player2, player3, sql, f1Scoring);
@@ -37,6 +38,13 @@ namespace F1_Fantasy
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Safety/VSC]"; //SQL statement to select data for number of safety cars and VSC's
             ClosestSelection(cnn, player1, player2, player3, sql, f1Scoring);
+
+            sql = @"SELECT * FROM [Formula_1].[dbo].[Dominant TM]";
+            SingleSelection(cnn, player1, player2, player3, sql, f1Scoring);
+
+            sql = @"SELECT * FROM [Formula_1].[dbo].[Podium Drivers]";
+            guesser = true; //Indicates a different type of scoring
+            Rankings(cnn, player1, player2, player3, sql, guesser);
 
             CloseConnection(cnn);
 
@@ -55,7 +63,7 @@ namespace F1_Fantasy
             cnn.Close();
         }
         
-        public static void Rankings(SqlConnection cnn, Player player1, Player player2, Player player3, string sql)
+        public static void Rankings(SqlConnection cnn, Player player1, Player player2, Player player3, string sql, Boolean guesser)
         {
             int[] answersP1 = new int[30]; //These are set at 30 to account for any new drivers or teams
             int[] answersP2 = new int[30];
@@ -82,12 +90,19 @@ namespace F1_Fantasy
                 }
                 count++;
             }
-            if (stop == false) //Will not add points if the results values are null
+            if (stop == false && guesser == false) //Will not add points if the results values are null
             {
                 result[count] = -1; //This will be the sentinel value
                 AddPoints(answersP1, result, player1);
                 AddPoints(answersP2, result, player2);
                 AddPoints(answersP3, result, player3);
+            }
+            else if (stop == false && guesser == true)
+            {
+                result[count] = -1;
+                ChangePoints(answersP1, result, player1);
+                ChangePoints(answersP2, result, player2);
+                ChangePoints(answersP3, result, player3);
             }
             //Close the connection
             dataReader.Close();
@@ -155,8 +170,8 @@ namespace F1_Fantasy
                     answers[0] = dataReader.GetInt32(0);
                     answers[1] = dataReader.GetInt32(1);
                     answers[2] = dataReader.GetInt32(2);
+                    result = dataReader.GetInt32(3); //Every row's results will be stored in this array
                 }
-                result = dataReader.GetInt32(3); //Every row's results will be stored in this array
             }
 
             if (stop == false)
@@ -167,6 +182,10 @@ namespace F1_Fantasy
                 AddPoints(answers[1], player2);
                 AddPoints(answers[2], player3);
             }
+
+            //Close the connection
+            dataReader.Close();
+            command.Dispose();
         }
         //This method will check to see if a string value is null
         public static Boolean CheckIfNull(string nullChecker)
@@ -206,6 +225,25 @@ namespace F1_Fantasy
                 else if ((results[count] - 2) < answers[count] && answers[count] < (results[count] + 2)) //If the player was within 2, they gain 2 points
                 {
                     player.UpdatePoints(SLIGHTLY_OFF);
+                }
+                count++; //Increment the count
+            }
+        }
+        //This method will check to see if a driver was guessed or not
+        public static void ChangePoints(int[] answers, int[] results, Player player)
+        {
+            int count = 0;
+            const int CORRECT = 5; //Player gains 5 points if they are exact
+            const int INCORRECT = -3; //Player gains 2 points if they are within 2
+            while (results[count] != -1) //Loops through all the results. -1 is the sentinel value
+            {
+                if (answers[count] == results[count]) //When the player's answer matches the results, they gain points
+                {
+                    player.UpdatePoints(CORRECT); //If the player guessed right, they will gain five points
+                }
+                else
+                {
+                    player.UpdatePoints(INCORRECT); //If the player guessed wrong or missed one, they lose three points
                 }
                 count++; //Increment the count
             }
@@ -253,7 +291,7 @@ namespace F1_Fantasy
                 {
                     answers[x] = f1Scoring[1];
                 }
-                else if (answers[x] == c)
+                else if (answers[x] == c) //Note that if the first two players tie for first, the third player will receive third place points
                 {
                     answers[x] = f1Scoring[2];
                 }
