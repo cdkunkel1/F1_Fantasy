@@ -59,6 +59,8 @@ namespace F1_Fantasy
             sql = @"SELECT * FROM [Formula_1].[dbo].[Unbroken Lead]"; //SQL statement to select data on which race the WDC was won at
             ClosestSelection(cnn, player1, player2, player3, sql, f1Scoring);
 
+            sql = @"SELECT * FROM [Formula_1].[dbo].[Race Retirements]";
+            RetirementLosses(cnn, player1, player2, player3, sql);
 
 
             CloseConnection(cnn);
@@ -209,6 +211,46 @@ namespace F1_Fantasy
             dataReader.Close();
             command.Dispose();
         }
+        //This method will calculate how many points the players lose during the three races they selected for retirements
+        public static void RetirementLosses(SqlConnection cnn, Player player1, Player player2, Player player3, string sql)
+        {
+            int[] answers = new int[3];
+            int result = 0;
+            string nullChecker = "";
+            SqlCommand command = new SqlCommand(sql, cnn); //Executes the sql command to return the table
+            SqlDataReader dataReader = command.ExecuteReader(); //Begin to read the table
+            Boolean stop = false;
+
+            while (dataReader.Read() && stop == false) //Reads the next line, stops if the results column is null
+            {
+                nullChecker = dataReader.GetValue(5).ToString(); //Checks the value in the results column to make sure it is not null
+                stop = CheckIfNull(nullChecker); //stop will return true if the value is null
+
+                if (stop == false)
+                {
+                    answers[0] = dataReader.GetInt32(2); //Checks to see if the player chose the race
+                    answers[1] = dataReader.GetInt32(3);
+                    answers[2] = dataReader.GetInt32(4);
+                    result = dataReader.GetInt32(5);
+
+                   if (answers[0] == 1) //If the player chose the race
+                   {
+                       SubtractPoints(result, player1); //They lose five points for every retirement in their chose race
+                   }
+                   if (answers[1] == 1) //These will check to see if any of the players picked the race
+                   {
+                        SubtractPoints(result, player2);
+                   }
+                   if (answers[2] == 1)
+                   {
+                        SubtractPoints(result, player3);
+                   }
+                }
+            }
+            //Close the connection
+            dataReader.Close();
+            command.Dispose();
+        }
         //This method will check to see if a string value is null
         public static Boolean CheckIfNull(string nullChecker)
         {
@@ -298,6 +340,12 @@ namespace F1_Fantasy
                 }
                 count++; //Increment the count
             }
+        }
+
+        public static void SubtractPoints(int result, Player player)
+        {
+            int pointsLost = (result * -5);
+            player.UpdatePoints(pointsLost);
         }
         //This method will return the player's answers as their distances from the answer
         public static void GetDistance(int[] answer, int result)
