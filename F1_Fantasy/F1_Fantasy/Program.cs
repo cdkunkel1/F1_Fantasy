@@ -54,7 +54,10 @@ namespace F1_Fantasy
             Rankings(cnn, player1, player2, player3, sql, scoringStyle);
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Fewest Laps]"; //SQL statement to select data on the driver with the least amount of laps completed
-            SingleSelection(cnn, player1, player2, player3, sql, f1Scoring); 
+            SingleSelection(cnn, player1, player2, player3, sql, f1Scoring);
+
+            sql = @"SELECT * FROM [Formula_1].[dbo].[Unbroken Lead]"; //SQL statement to select data on which race the WDC was won at
+            ClosestSelection(cnn, player1, player2, player3, sql, f1Scoring);
 
 
 
@@ -109,14 +112,14 @@ namespace F1_Fantasy
                 AddPoints(answersP2, result, player2);
                 AddPoints(answersP3, result, player3);
             }
-            else if (stop == false && scoringStyle == 2)
+            else if (stop == false && scoringStyle == 2) //This is a different scoring style based on the question
             {
                 result[count] = -1;
                 ChangePoints(answersP1, result, player1);
                 ChangePoints(answersP2, result, player2);
                 ChangePoints(answersP3, result, player3);
             }
-            else if (stop == false && scoringStyle == 3)
+            else if (stop == false && scoringStyle == 3) //Different scoring style
             {
                 result[count] = -1;
                 AddPointsV2(answersP1, result, player1);
