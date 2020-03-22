@@ -231,8 +231,16 @@ namespace F1_Fantasy
 
             while (dataReader.Read() && stop == false) //Reads the next line, stops if the results column is null
             {
-                nullChecker = dataReader.GetValue(5).ToString(); //Checks the value in the results column to make sure it is not null
-                stop = CheckIfNull(nullChecker); //stop will return true if the value is null
+                if (scoringStyle == 1)
+                {
+                    nullChecker = dataReader.GetValue(5).ToString(); //Checks the value in the results column to make sure it is not null
+                    stop = CheckIfNull(nullChecker); //stop will return true if the value is null
+                }
+                else if (scoringStyle == 2)
+                {
+                    nullChecker = dataReader.GetValue(4).ToString(); //Checks the value in the results column to make sure it is not null
+                    stop = CheckIfNull(nullChecker); //stop will return true if the value is null
+                }
 
                 if (stop == false)
                 {
