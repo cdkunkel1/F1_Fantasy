@@ -59,8 +59,16 @@ namespace F1_Fantasy
             sql = @"SELECT * FROM [Formula_1].[dbo].[Unbroken Lead]"; //SQL statement to select data on which race the WDC was won at
             ClosestSelection(cnn, player1, player2, player3, sql, f1Scoring);
 
-            sql = @"SELECT * FROM [Formula_1].[dbo].[Race Retirements]";
-            RetirementLosses(cnn, player1, player2, player3, sql);
+            sql = @"SELECT * FROM [Formula_1].[dbo].[Race Retirements]"; //SQL statement to select data on the number of retirements per race
+            scoringStyle = 1;
+            CheckIfPicked(cnn, player1, player2, player3, sql, scoringStyle);
+
+            sql = @"SELECT * FROM [Formula_1].[dbo].[Random Events]"; //SQL statement to select data on the number of random events that occurred
+            ClosestSelection(cnn, player1, player2, player3, sql, f1Scoring);
+
+            sql = @"SELECT * FROM [Formula_1].[dbo].[Y/N Scenarios]"; //SQL statement to select data on whether or not certain events happened
+            scoringStyle = 2;
+            CheckIfPicked(cnn, player1, player2, player3, sql, scoringStyle);
 
 
             CloseConnection(cnn);
@@ -212,7 +220,7 @@ namespace F1_Fantasy
             command.Dispose();
         }
         //This method will calculate how many points the players lose during the three races they selected for retirements
-        public static void RetirementLosses(SqlConnection cnn, Player player1, Player player2, Player player3, string sql)
+        public static void CheckIfPicked(SqlConnection cnn, Player player1, Player player2, Player player3, string sql, int scoringStyle)
         {
             int[] answers = new int[3];
             int result = 0;
@@ -228,23 +236,44 @@ namespace F1_Fantasy
 
                 if (stop == false)
                 {
-                    answers[0] = dataReader.GetInt32(2); //Checks to see if the player chose the race
-                    answers[1] = dataReader.GetInt32(3);
-                    answers[2] = dataReader.GetInt32(4);
-                    result = dataReader.GetInt32(5);
+                    if (scoringStyle == 1)
+                    {
+                        answers[0] = dataReader.GetInt32(2); //Checks to see if the player chose the race
+                        answers[1] = dataReader.GetInt32(3);
+                        answers[2] = dataReader.GetInt32(4);
+                        result = dataReader.GetInt32(5);
+                    }
+                    else if (scoringStyle == 2) //Different columns must be read in the second scoring style
+                    {
+                        answers[0] = dataReader.GetInt32(1); //Checks to see if the player chose the race
+                        answers[1] = dataReader.GetInt32(2);
+                        answers[2] = dataReader.GetInt32(3);
+                        result = dataReader.GetInt32(4);
+                    }
 
-                   if (answers[0] == 1) //If the player chose the race
-                   {
-                       SubtractPoints(result, player1); //They lose five points for every retirement in their chose race
-                   }
-                   if (answers[1] == 1) //These will check to see if any of the players picked the race
-                   {
-                        SubtractPoints(result, player2);
-                   }
-                   if (answers[2] == 1)
-                   {
-                        SubtractPoints(result, player3);
-                   }
+                    if (scoringStyle == 1)
+                    {
+
+
+                        if (answers[0] == 1) //If the player chose the race
+                        {
+                            SubtractPoints(result, player1); //They lose five points for every retirement in their chose race
+                        }
+                        if (answers[1] == 1) //These will check to see if any of the players picked the race
+                        {
+                            SubtractPoints(result, player2);
+                        }
+                        if (answers[2] == 1)
+                        {
+                            SubtractPoints(result, player3);
+                        }
+                    }
+                    else if (scoringStyle == 2)
+                    {
+                        CheckEvent(result, player1, answers[0]);
+                        CheckEvent(result, player2, answers[1]);
+                        CheckEvent(result, player3, answers[2]);
+                    }
                 }
             }
             //Close the connection
@@ -341,11 +370,31 @@ namespace F1_Fantasy
                 count++; //Increment the count
             }
         }
-
+        //This method will subtract points from the player for every retirement in a selected race
         public static void SubtractPoints(int result, Player player)
         {
             int pointsLost = (result * -5);
             player.UpdatePoints(pointsLost);
+        }
+        //This method will check to see if the user correctly guessed true or false for events and will add points as a result
+        public static void CheckEvent(int results, Player player, int answer)
+        {
+            const int CORRECT_TRUE = 5;
+            const int CORRECT_FALSE = 3;
+            const int INCORRECT = -3;
+            
+            if (results == 1 && results == answer) //If the user correctly guessed true, then they will gain 5 points
+            {
+                player.UpdatePoints(CORRECT_TRUE);
+            }
+            else if (results == 0 && results == answer) //If the user correctly guessed false, then they will gain 3 points
+            {
+                player.UpdatePoints(CORRECT_FALSE);
+            }
+            else //If the user guessed incorrectly, then they lose three points
+            {
+                player.UpdatePoints(INCORRECT);
+            }
         }
         //This method will return the player's answers as their distances from the answer
         public static void GetDistance(int[] answer, int result)
