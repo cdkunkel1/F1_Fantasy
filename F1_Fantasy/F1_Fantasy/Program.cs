@@ -12,6 +12,7 @@ namespace F1_Fantasy
         {
             //Declare Variables
             int[] f1Scoring = { 25, 18, 15, 12, 10, 8, 6, 4, 2, 1 };
+            int[] potentialPoints = { 100, 65, 25, 25, 25, 25, 100, 25, 30, 25, 25, 0, 25, 40 };
             string sql = "";
             string conString = @"Data Source = (LocalDB)\Formula_1; Initial Catalog = Formula_1; Integrated Security = True"; //This is the connection string for the F1 database
             int scoringStyle = 1; //Will be used to indicate a different type of scoring when using the Ranking() method
@@ -28,49 +29,49 @@ namespace F1_Fantasy
             players[2] = new Player("Cory");
             Player.IncCount(); //Count is now at three for the number of players
 
-            sql = @"SELECT * FROM [Formula_1].[dbo].[WDC Rankings]"; //SQL statement to select data for Driver Rankings
+            sql = @"SELECT * FROM [Formula_1].[dbo].[WDC Rankings]"; //SQL statement to select data for Driver Rankings. Potential points is 100
             Rankings(cnn, players, sql, scoringStyle);
 
-            sql = @"SELECT * FROM [Formula_1].[dbo].[Constructor Rankings]"; //SQL statement to select data for constructor rankings
+            sql = @"SELECT * FROM [Formula_1].[dbo].[Constructor Rankings]"; //SQL statement to select data for constructor rankings. Potential points is 65
             Rankings(cnn, players, sql, scoringStyle);
 
-            sql = @"SELECT * FROM [Formula_1].[dbo].[Fastest Pit Stop]"; //SQL statement to select data for fastest pit stop
+            sql = @"SELECT * FROM [Formula_1].[dbo].[Fastest Pit Stop]"; //SQL statement to select data for fastest pit stop. Potential points is 25
             SingleSelection(cnn, players, sql, f1Scoring);
 
-            sql = @"SELECT * FROM [Formula_1].[dbo].[Most DOD]"; //SQL statement to select data for most driver of the days
+            sql = @"SELECT * FROM [Formula_1].[dbo].[Most DOD]"; //SQL statement to select data for most driver of the days. Potential points is 25
             SingleSelection(cnn, players, sql, f1Scoring);
 
-            sql = @"SELECT * FROM [Formula_1].[dbo].[Safety/VSC]"; //SQL statement to select data for number of safety cars and VSC's
+            sql = @"SELECT * FROM [Formula_1].[dbo].[Safety/VSC]"; //SQL statement to select data for number of safety cars and VSC's. Potential points is 25
             ClosestSelection(cnn, players, sql, f1Scoring);
 
-            sql = @"SELECT * FROM [Formula_1].[dbo].[Dominant TM]"; //SQL statement to select data for the most dominant teammate
+            sql = @"SELECT * FROM [Formula_1].[dbo].[Dominant TM]"; //SQL statement to select data for the most dominant teammate. Potential points is 25
             SingleSelection(cnn, players, sql, f1Scoring);
 
-            sql = @"SELECT * FROM [Formula_1].[dbo].[Podium Drivers]"; //SQL statement to select data for which drivers got a podium
+            sql = @"SELECT * FROM [Formula_1].[dbo].[Podium Drivers]"; //SQL statement to select data for which drivers got a podium. Potential points is 100
             scoringStyle = 2; //Indicates a different type of scoring
             Rankings(cnn, players, sql, scoringStyle);
 
-            sql = @"SELECT * FROM [Formula_1].[dbo].[Most Penalized T]"; //SQL statement to select data for the most penalized team
+            sql = @"SELECT * FROM [Formula_1].[dbo].[Most Penalized T]"; //SQL statement to select data for the most penalized team. Potential points is 25
             SingleSelection(cnn, players, sql, f1Scoring);
 
             scoringStyle = 3;
-            sql = @"SELECT * FROM [Formula_1].[dbo].[After Six Races]"; //SQL statement to select data for the WDC rankings after six races
+            sql = @"SELECT * FROM [Formula_1].[dbo].[After Six Races]"; //SQL statement to select data for the WDC rankings after six races. Potential points is 30
             Rankings(cnn, players, sql, scoringStyle);
 
-            sql = @"SELECT * FROM [Formula_1].[dbo].[Fewest Laps]"; //SQL statement to select data on the driver with the least amount of laps completed
+            sql = @"SELECT * FROM [Formula_1].[dbo].[Fewest Laps]"; //SQL statement to select data on the driver with the least amount of laps completed. Potential points is 25
             SingleSelection(cnn, players, sql, f1Scoring);
 
-            sql = @"SELECT * FROM [Formula_1].[dbo].[Unbroken Lead]"; //SQL statement to select data on which race the WDC was won at
+            sql = @"SELECT * FROM [Formula_1].[dbo].[Unbroken Lead]"; //SQL statement to select data on which race the WDC was won at. Potential points is 25
             ClosestSelection(cnn, players, sql, f1Scoring);
 
-            sql = @"SELECT * FROM [Formula_1].[dbo].[Race Retirements]"; //SQL statement to select data on the number of retirements per race
+            sql = @"SELECT * FROM [Formula_1].[dbo].[Race Retirements]"; //SQL statement to select data on the number of retirements per race. Potential points to gain is 0
             scoringStyle = 1;
             CheckIfPicked(cnn, players, sql, scoringStyle);
 
-            sql = @"SELECT * FROM [Formula_1].[dbo].[Random Events]"; //SQL statement to select data on the number of random events that occurred
+            sql = @"SELECT * FROM [Formula_1].[dbo].[Random Events]"; //SQL statement to select data on the number of random events that occurred. Potential points is 25
             ClosestSelection(cnn, players, sql, f1Scoring);
 
-            sql = @"SELECT * FROM [Formula_1].[dbo].[Y/N Scenarios]"; //SQL statement to select data on whether or not certain events happened
+            sql = @"SELECT * FROM [Formula_1].[dbo].[Y/N Scenarios]"; //SQL statement to select data on whether or not certain events happened. Potential points is 40
             scoringStyle = 2;
             CheckIfPicked(cnn, players, sql, scoringStyle); 
 
@@ -79,6 +80,7 @@ namespace F1_Fantasy
 
             F1Car(); //Displays an F1 Car
             DisplayPoints(players);
+
             Console.ReadKey();
         }
         //This method will open a connection to the SQL server
@@ -440,6 +442,7 @@ namespace F1_Fantasy
         //This will simply output the scores for each player
         public static void DisplayPoints(Player[] players)
         {
+            Console.WriteLine("Here are the current points for each player:\n");
             for (int x = 0; x < Player.GetCount(); x++)
             {
                 Console.WriteLine(players[x].ToString());
