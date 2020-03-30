@@ -22,60 +22,63 @@ namespace F1_Fantasy
             //Use a Player class to keep track of names and points
             Player[] players = new Player[20];
             players[0] = new Player("Nathan");
+            Player.IncCount();
             players[1] = new Player("Ben");
+            Player.IncCount();
             players[2] = new Player("Cory");
+            Player.IncCount(); //Count is now at three for the number of players
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[WDC Rankings]"; //SQL statement to select data for Driver Rankings
-            Rankings(cnn, player1, player2, player3, sql, scoringStyle);
+            Rankings(cnn, players, sql, scoringStyle);
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Constructor Rankings]"; //SQL statement to select data for constructor rankings
-            Rankings(cnn, player1, player2, player3, sql, scoringStyle);
+            Rankings(cnn, players, sql, scoringStyle);
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Fastest Pit Stop]"; //SQL statement to select data for fastest pit stop
-            SingleSelection(cnn, player1, player2, player3, sql, f1Scoring);
+            SingleSelection(cnn, players, sql, f1Scoring);
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Most DOD]"; //SQL statement to select data for most driver of the days
-            SingleSelection(cnn, player1, player2, player3, sql, f1Scoring);
+            SingleSelection(cnn, players, sql, f1Scoring);
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Safety/VSC]"; //SQL statement to select data for number of safety cars and VSC's
-            ClosestSelection(cnn, player1, player2, player3, sql, f1Scoring);
+            ClosestSelection(cnn, players, sql, f1Scoring);
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Dominant TM]"; //SQL statement to select data for the most dominant teammate
-            SingleSelection(cnn, player1, player2, player3, sql, f1Scoring);
+            SingleSelection(cnn, players, sql, f1Scoring);
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Podium Drivers]"; //SQL statement to select data for which drivers got a podium
             scoringStyle = 2; //Indicates a different type of scoring
-            Rankings(cnn, player1, player2, player3, sql, scoringStyle);
+            Rankings(cnn, players, sql, scoringStyle);
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Most Penalized T]"; //SQL statement to select data for the most penalized team
-            SingleSelection(cnn, player1, player2, player3, sql, f1Scoring);
+            SingleSelection(cnn, players, sql, f1Scoring);
 
             scoringStyle = 3;
             sql = @"SELECT * FROM [Formula_1].[dbo].[After Six Races]"; //SQL statement to select data for the WDC rankings after six races
-            Rankings(cnn, player1, player2, player3, sql, scoringStyle);
+            Rankings(cnn, players, sql, scoringStyle);
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Fewest Laps]"; //SQL statement to select data on the driver with the least amount of laps completed
-            SingleSelection(cnn, player1, player2, player3, sql, f1Scoring);
+            SingleSelection(cnn, players, sql, f1Scoring);
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Unbroken Lead]"; //SQL statement to select data on which race the WDC was won at
-            ClosestSelection(cnn, player1, player2, player3, sql, f1Scoring);
+            ClosestSelection(cnn, players, sql, f1Scoring);
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Race Retirements]"; //SQL statement to select data on the number of retirements per race
             scoringStyle = 1;
-            CheckIfPicked(cnn, player1, player2, player3, sql, scoringStyle);
+            CheckIfPicked(cnn, players, sql, scoringStyle);
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Random Events]"; //SQL statement to select data on the number of random events that occurred
-            ClosestSelection(cnn, player1, player2, player3, sql, f1Scoring);
+            ClosestSelection(cnn, players, sql, f1Scoring);
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Y/N Scenarios]"; //SQL statement to select data on whether or not certain events happened
             scoringStyle = 2;
-            CheckIfPicked(cnn, player1, player2, player3, sql, scoringStyle);
+            CheckIfPicked(cnn, players, sql, scoringStyle); 
 
 
             CloseConnection(cnn);
 
             F1Car(); //Displays an F1 Car
-            DisplayPoints(player1, player2, player3);
+            DisplayPoints(players);
             Console.ReadKey();
         }
         //This method will open a connection to the SQL server
@@ -89,63 +92,57 @@ namespace F1_Fantasy
             cnn.Close();
         }
         
-        public static void Rankings(SqlConnection cnn, Player player1, Player player2, Player player3, string sql, int scoringStyle)
+        public static void Rankings(SqlConnection cnn, Player[] players, string sql, int scoringStyle)
         {
-            int[] answersP1 = new int[30]; //These are set at 30 to account for any new drivers or teams
-            int[] answersP2 = new int[30];
-            int[] answersP3 = new int[30];
-            SqlCommand command = new SqlCommand(sql, cnn); //Executes the sql command to return the table
-            SqlDataReader dataReader = command.ExecuteReader(); //Begin to read the table
+            int[] answers = new int[30]; //These are set at 30 to account for any new drivers or teams
             string nullChecker = "";
             Boolean stop = false;
             int[] result = new int[30];
             int count = 0;
-            while (dataReader.Read() && stop == false) //Reads the next line, stops if the results column is null 
+            for (int x = 0; x < Player.GetCount(); x++)
             {
-                if (count == 0)
+                SqlCommand command = new SqlCommand(sql, cnn); //Executes the sql command to return the table
+                SqlDataReader dataReader = command.ExecuteReader(); //Begin to read the table
+                while (dataReader.Read() && stop == false) //Reads the next line, stops if the results column is null 
                 {
-                    nullChecker = dataReader.GetValue(4).ToString(); //Checks the value in the results column to make sure it is not null
-                    stop = CheckIfNull(nullChecker); //stop will return true if the value is null
+                    if (count == 0)
+                    {
+                        nullChecker = dataReader.GetValue(4).ToString(); //Checks the value in the results column to make sure it is not null
+                        stop = CheckIfNull(nullChecker); //stop will return true if the value is null
+                    }
+                    if (stop == false)
+                    {
+                        result[count] = dataReader.GetInt32(4); //This is the actual result
+                        answers[count] = dataReader.GetInt32(x + 1); //These are what the players picked
+                    }
+                    count++;
                 }
-                if (stop == false)
+                if (stop == false && scoringStyle == 1) //Will not add points if the results values are null
                 {
-                    result[count] = dataReader.GetInt32(4); //This is the actual result
-                    answersP1[count] = dataReader.GetInt32(1); //These are what the players picked
-                    answersP2[count] = dataReader.GetInt32(2);
-                    answersP3[count] = dataReader.GetInt32(3);
+                    result[count] = -1; //This will be the sentinel value
+                    AddPoints(answers, result, players[x]);
                 }
-                count++;
+                else if (stop == false && scoringStyle == 2) //This is a different scoring style based on the question
+                {
+                    result[count] = -1;
+                    ChangePoints(answers, result, players[x]);
+                }
+                else if (stop == false && scoringStyle == 3) //Different scoring style
+                {
+                    result[count] = -1;
+                    AddPointsV2(answers, result, players[x]);
+
+                }
+                //Close the connection
+                dataReader.Close();
+                command.Dispose();
             }
-            if (stop == false && scoringStyle == 1) //Will not add points if the results values are null
-            {
-                result[count] = -1; //This will be the sentinel value
-                AddPoints(answersP1, result, player1);
-                AddPoints(answersP2, result, player2);
-                AddPoints(answersP3, result, player3);
-            }
-            else if (stop == false && scoringStyle == 2) //This is a different scoring style based on the question
-            {
-                result[count] = -1;
-                ChangePoints(answersP1, result, player1);
-                ChangePoints(answersP2, result, player2);
-                ChangePoints(answersP3, result, player3);
-            }
-            else if (stop == false && scoringStyle == 3) //Different scoring style
-            {
-                result[count] = -1;
-                AddPointsV2(answersP1, result, player1);
-                AddPointsV2(answersP1, result, player1);
-                AddPointsV2(answersP1, result, player1);
-            }
-            //Close the connection
-            dataReader.Close();
-            command.Dispose();
         }
         //This method will be used to calculate points from the fastest pit stop question
-        public static void SingleSelection(SqlConnection cnn, Player player1, Player player2, Player player3, string sql, int[] f1Scoring)
+        public static void SingleSelection(SqlConnection cnn, Player[] players, string sql, int[] f1Scoring)
         {
             string[] results = new string[30]; //Stores the actual results
-            string[] answers = new string[3]; //Stores the player guesses
+            string[] answers = new string[20]; //Stores the player guesses
             SqlCommand command = new SqlCommand(sql, cnn); //Executes the sql command to return the table
             SqlDataReader dataReader = command.ExecuteReader(); //Begin to read the table
             string nullChecker = "";
@@ -162,9 +159,10 @@ namespace F1_Fantasy
                 {
                     if (count == 0) //This will establish the players' answers in the first row
                     {
-                        answers[0] = dataReader.GetValue(0).ToString();
-                        answers[1] = dataReader.GetValue(1).ToString();
-                        answers[2] = dataReader.GetValue(2).ToString();
+                        for (int x = 0; x < Player.GetCount(); x++)
+                        {
+                            answers[x] = dataReader.GetValue(x).ToString();
+                        }
                     }
                     results[count] = dataReader.GetValue(3).ToString(); //Every row's results will be stored in this array
                     count++; //Increments to account for a new row
@@ -174,18 +172,19 @@ namespace F1_Fantasy
 
             if (stop == false)
             {
-                AddPoints(answers[0], results, f1Scoring, player1); //Adds points for each player
-                AddPoints(answers[1], results, f1Scoring, player2); //Adds points for each player
-                AddPoints(answers[2], results, f1Scoring, player3); //Adds points for each player
+                for (int x = 0; x < Player.GetCount(); x++)
+                {
+                    AddPoints(answers[x], results, f1Scoring, players[x]); //Adds points for each player
+                }
             }
             //Close the connection
             dataReader.Close();
             command.Dispose();
         }
 
-        public static void ClosestSelection(SqlConnection cnn, Player player1, Player player2, Player player3, string sql, int[] f1Scoring)
+        public static void ClosestSelection(SqlConnection cnn, Player[] players, string sql, int[] f1Scoring)
         {
-            int[] answers = new int[3];
+            int[] answers = new int[20];
             int result = 0;
             string nullChecker = "";
             SqlCommand command = new SqlCommand(sql, cnn); //Executes the sql command to return the table
@@ -200,20 +199,19 @@ namespace F1_Fantasy
                 
                 if (stop == false) //This occurs if there are results to read
                 {
-                    answers[0] = dataReader.GetInt32(0);
-                    answers[1] = dataReader.GetInt32(1);
-                    answers[2] = dataReader.GetInt32(2);
-                    result = dataReader.GetInt32(3); //Every row's results will be stored in this array
+                    for (int x = 0; x < Player.GetCount(); x++)
+                    {
+                        answers[x] = dataReader.GetInt32(x);
+                        players[x].SetAnswer(answers[x]);
+                    }
+                    result = dataReader.GetInt32(Player.GetCount()); //The results column will be located at the Player.GetCount() number
                 }
             }
 
             if (stop == false)
             {
-                GetDistance(answers, result); //Finds how far the player's were from the results
-                SortAnswers(answers, f1Scoring, player1, player2, player3);
-                AddPoints(answers[0], player1);
-                AddPoints(answers[1], player2);
-                AddPoints(answers[2], player3);
+                GetDistance(players, result); //Finds how far the player's were from the results
+                SortAnswers(f1Scoring, players);
             }
 
             //Close the connection
@@ -221,9 +219,9 @@ namespace F1_Fantasy
             command.Dispose();
         }
         //This method will calculate how many points the players lose during the three races they selected for retirements
-        public static void CheckIfPicked(SqlConnection cnn, Player player1, Player player2, Player player3, string sql, int scoringStyle)
+        public static void CheckIfPicked(SqlConnection cnn, Player[] players, string sql, int scoringStyle)
         {
-            int[] answers = new int[3];
+            int[] answers = new int[20];
             int result = 0;
             string nullChecker = "";
             SqlCommand command = new SqlCommand(sql, cnn); //Executes the sql command to return the table
@@ -232,56 +230,33 @@ namespace F1_Fantasy
 
             while (dataReader.Read() && stop == false) //Reads the next line, stops if the results column is null
             {
-                if (scoringStyle == 1)
-                {
-                    nullChecker = dataReader.GetValue(5).ToString(); //Checks the value in the results column to make sure it is not null
-                    stop = CheckIfNull(nullChecker); //stop will return true if the value is null
-                }
-                else if (scoringStyle == 2)
-                {
-                    nullChecker = dataReader.GetValue(4).ToString(); //Checks the value in the results column to make sure it is not null
-                    stop = CheckIfNull(nullChecker); //stop will return true if the value is null
-                }
+                nullChecker = dataReader.GetValue(4).ToString(); //Checks the value in the results column to make sure it is not null
+                stop = CheckIfNull(nullChecker); //stop will return true if the value is null
 
                 if (stop == false)
-                {
-                    if (scoringStyle == 1)
+                {           
+                    for(int x = 0; x < Player.GetCount(); x++)
                     {
-                        answers[0] = dataReader.GetInt32(2); //Checks to see if the player chose the race
-                        answers[1] = dataReader.GetInt32(3);
-                        answers[2] = dataReader.GetInt32(4);
-                        result = dataReader.GetInt32(5);
+                        answers[x] = dataReader.GetInt32(x + 1); //Checks to see if the player chose a race, indicated by a 1
                     }
-                    else if (scoringStyle == 2) //Different columns must be read in the second scoring style
-                    {
-                        answers[0] = dataReader.GetInt32(1); //Checks to see if the player chose the race
-                        answers[1] = dataReader.GetInt32(2);
-                        answers[2] = dataReader.GetInt32(3);
-                        result = dataReader.GetInt32(4);
-                    }
+                    result = dataReader.GetInt32(Player.GetCount() + 1); //Stores the number of retirements for a race
 
                     if (scoringStyle == 1)
                     {
-
-
-                        if (answers[0] == 1) //If the player chose the race
+                        for (int x = 0; x < Player.GetCount(); x++)
                         {
-                            SubtractPoints(result, player1); //They lose five points for every retirement in their chose race
-                        }
-                        if (answers[1] == 1) //These will check to see if any of the players picked the race
-                        {
-                            SubtractPoints(result, player2);
-                        }
-                        if (answers[2] == 1)
-                        {
-                            SubtractPoints(result, player3);
+                            if (answers[x] == 1)
+                            {
+                                SubtractPoints(result, players[x]); //They lose five points for every retirement in their chose race
+                            }
                         }
                     }
                     else if (scoringStyle == 2)
                     {
-                        CheckEvent(result, player1, answers[0]);
-                        CheckEvent(result, player2, answers[1]);
-                        CheckEvent(result, player3, answers[2]);
+                        for (int x = 0; x < Player.GetCount(); x++)
+                        {
+                            CheckEvent(result, players[x], answers[x]); //Checks to see if the event happened or not and whether the player picked it
+                        }
                     }
                 }
             }
@@ -406,63 +381,62 @@ namespace F1_Fantasy
             }
         }
         //This method will return the player's answers as their distances from the answer
-        public static void GetDistance(int[] answer, int result)
+        public static void GetDistance(Player[] players, int result)
         {
-            for (int x = 0; x < answer.Length; x++) 
+            for (int x = 0; x < Player.GetCount(); x++) 
             {
-                answer[x] = Math.Abs(result - answer[x]); //Sets the answer array to how far away the guess was from the result
+                players[x].SetAnswer(Math.Abs(result - players[x].GetAnswer())); //Sets the answer array to how far away the guess was from the result
             }
         }
         //Sorts the player's answers from closest to furthest then gives them points
-        public static void SortAnswers(int[]answers, int[] f1Scoring, Player player1, Player player2, Player player3)
+        public static void SortAnswers(int[] f1Scoring, Player[] players)
         {
-            int a = answers[0];
-            int b = answers[1];
-            int c = answers[2];
-            //These if statements will sort the numbers from least (a) to greatest (c)
-            if (a > c)
+            int points = 0;
+
+            for(int x = 0; x < Player.GetCount(); x++)
             {
-                Swap(ref a, ref c);
+                players[x].SetPosition(x); //This will asign defaul positioning for the players 
             }
-            if (a > b)
+            //The positions will then be sorted
+            for (int x = 0; x < Player.GetCount() - 1; x++) //Loops through all the players and gives them positions starting at 0
             {
-                Swap(ref a, ref b);
+                int min = x;
+
+                for (int j = x + 1; j < Player.GetCount(); j++)
+                {
+                    if (players[j].GetAnswer() < players[min].GetAnswer())
+                    {
+                        min = j;
+                    }
+                }
+
+                if (min != x)
+                {
+                    SwapPositions(players, min, x);
+                }
             }
-            if (b > c)
-            {
-                Swap(ref b, ref c);
-            }          
             //This will loop through the player's answers and assign them points based on how far their answer was
-            for(int x = 0; x < 3; x++)
+            for (int x = 0; x < Player.GetCount(); x++)
             {
-                if (answers[x] == a) //If the player's answer matched the closest, then the will receive the most points
-                {
-                    answers[x] = f1Scoring[0]; 
-                }
-                else if (answers[x] == b) //If two players guess the same number, then it is possible for them to tie each other
-                {
-                    answers[x] = f1Scoring[1];
-                }
-                else if (answers[x] == c) //Note that if the first two players tie for first, the third player will receive third place points
-                {
-                    answers[x] = f1Scoring[2];
-                }
+                points = f1Scoring[players[x].GetPosition()];
+                AddPoints(points, players[x]);
             }            
         }
         //Swaps two numbers
-        public static void Swap(ref int a, ref int b)
+        public static void SwapPositions(Player[] players, int x, int y)
         {
-            int temp = a;
-            a = b;
-            b = temp;
+            int temp = players[x].GetPosition();
+            players[x].SetPosition(players[y].GetPosition());
+            players[y].SetPosition(temp);
             
         }
         //This will simply output the scores for each player
-        public static void DisplayPoints(Player player1, Player player2, Player player3)
+        public static void DisplayPoints(Player[] players)
         {
-            Console.WriteLine(player1.ToString());
-            Console.WriteLine(player2.ToString());
-            Console.WriteLine(player3.ToString());
+            for (int x = 0; x < Player.GetCount(); x++)
+            {
+                Console.WriteLine(players[x].ToString());
+            }
         }
         //Just something I made that I thought was cool
         public static void F1Car()
