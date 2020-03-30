@@ -34,14 +34,14 @@ namespace F1_Fantasy
             sql = @"SELECT * FROM [Formula_1].[dbo].[Constructor Rankings]"; //SQL statement to select data for constructor rankings
             Rankings(cnn, players, sql, scoringStyle);
 
-           /* sql = @"SELECT * FROM [Formula_1].[dbo].[Fastest Pit Stop]"; //SQL statement to select data for fastest pit stop
-            SingleSelection(cnn, player1, player2, player3, sql, f1Scoring);
+            sql = @"SELECT * FROM [Formula_1].[dbo].[Fastest Pit Stop]"; //SQL statement to select data for fastest pit stop
+            SingleSelection(cnn, players, sql, f1Scoring);
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Most DOD]"; //SQL statement to select data for most driver of the days
-            SingleSelection(cnn, player1, player2, player3, sql, f1Scoring);
+            SingleSelection(cnn, players, sql, f1Scoring);
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Safety/VSC]"; //SQL statement to select data for number of safety cars and VSC's
-            ClosestSelection(cnn, player1, player2, player3, sql, f1Scoring);
+            ClosestSelection(cnn, players, sql, f1Scoring);
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Dominant TM]"; //SQL statement to select data for the most dominant teammate
             SingleSelection(cnn, player1, player2, player3, sql, f1Scoring);
@@ -72,7 +72,7 @@ namespace F1_Fantasy
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Y/N Scenarios]"; //SQL statement to select data on whether or not certain events happened
             scoringStyle = 2;
-            CheckIfPicked(cnn, player1, player2, player3, sql, scoringStyle); */
+            CheckIfPicked(cnn, player1, player2, player3, sql, scoringStyle); 
 
 
             CloseConnection(cnn);
@@ -139,10 +139,10 @@ namespace F1_Fantasy
             }
         }
         //This method will be used to calculate points from the fastest pit stop question
-        public static void SingleSelection(SqlConnection cnn, Player player1, Player player2, Player player3, string sql, int[] f1Scoring)
+        public static void SingleSelection(SqlConnection cnn, Player[] players, string sql, int[] f1Scoring)
         {
             string[] results = new string[30]; //Stores the actual results
-            string[] answers = new string[3]; //Stores the player guesses
+            string[] answers = new string[20]; //Stores the player guesses
             SqlCommand command = new SqlCommand(sql, cnn); //Executes the sql command to return the table
             SqlDataReader dataReader = command.ExecuteReader(); //Begin to read the table
             string nullChecker = "";
@@ -159,9 +159,10 @@ namespace F1_Fantasy
                 {
                     if (count == 0) //This will establish the players' answers in the first row
                     {
-                        answers[0] = dataReader.GetValue(0).ToString();
-                        answers[1] = dataReader.GetValue(1).ToString();
-                        answers[2] = dataReader.GetValue(2).ToString();
+                        for (int x = 0; x < Player.GetCount(); x++)
+                        {
+                            answers[x] = dataReader.GetValue(x).ToString();
+                        }
                     }
                     results[count] = dataReader.GetValue(3).ToString(); //Every row's results will be stored in this array
                     count++; //Increments to account for a new row
@@ -171,18 +172,19 @@ namespace F1_Fantasy
 
             if (stop == false)
             {
-                AddPoints(answers[0], results, f1Scoring, player1); //Adds points for each player
-                AddPoints(answers[1], results, f1Scoring, player2); //Adds points for each player
-                AddPoints(answers[2], results, f1Scoring, player3); //Adds points for each player
+                for (int x = 0; x < Player.GetCount(); x++)
+                {
+                    AddPoints(answers[x], results, f1Scoring, players[x]); //Adds points for each player
+                }
             }
             //Close the connection
             dataReader.Close();
             command.Dispose();
         }
 
-        public static void ClosestSelection(SqlConnection cnn, Player player1, Player player2, Player player3, string sql, int[] f1Scoring)
+        public static void ClosestSelection(SqlConnection cnn, Player[] players, string sql, int[] f1Scoring)
         {
-            int[] answers = new int[3];
+            int[] answers = new int[20];
             int result = 0;
             string nullChecker = "";
             SqlCommand command = new SqlCommand(sql, cnn); //Executes the sql command to return the table
@@ -197,20 +199,19 @@ namespace F1_Fantasy
                 
                 if (stop == false) //This occurs if there are results to read
                 {
-                    answers[0] = dataReader.GetInt32(0);
-                    answers[1] = dataReader.GetInt32(1);
-                    answers[2] = dataReader.GetInt32(2);
-                    result = dataReader.GetInt32(3); //Every row's results will be stored in this array
+                    for (int x = 0; x < Player.GetCount(); x++)
+                    {
+                        answers[x] = dataReader.GetInt32(x);
+                        players[x].SetAnswer(answers[x]);
+                    }
+                    result = dataReader.GetInt32(Player.GetCount()); //The results column will be located at the Player.GetCount() number
                 }
             }
 
             if (stop == false)
             {
-                GetDistance(answers, result); //Finds how far the player's were from the results
-                SortAnswers(answers, f1Scoring, player1, player2, player3);
-                AddPoints(answers[0], player1);
-                AddPoints(answers[1], player2);
-                AddPoints(answers[2], player3);
+                GetDistance(players, result); //Finds how far the player's were from the results
+                SortAnswers(f1Scoring, players);
             }
 
             //Close the connection
@@ -403,55 +404,53 @@ namespace F1_Fantasy
             }
         }
         //This method will return the player's answers as their distances from the answer
-        public static void GetDistance(int[] answer, int result)
+        public static void GetDistance(Player[] players, int result)
         {
-            for (int x = 0; x < answer.Length; x++) 
+            for (int x = 0; x < Player.GetCount(); x++) 
             {
-                answer[x] = Math.Abs(result - answer[x]); //Sets the answer array to how far away the guess was from the result
+                players[x].SetAnswer(Math.Abs(result - players[x].GetAnswer())); //Sets the answer array to how far away the guess was from the result
             }
         }
         //Sorts the player's answers from closest to furthest then gives them points
-        public static void SortAnswers(int[]answers, int[] f1Scoring, Player player1, Player player2, Player player3)
+        public static void SortAnswers(int[] f1Scoring, Player[] players)
         {
-            int a = answers[0];
-            int b = answers[1];
-            int c = answers[2];
-            //These if statements will sort the numbers from least (a) to greatest (c)
-            if (a > c)
+            int points = 0;
+
+            for(int x = 0; x < Player.GetCount(); x++)
             {
-                Swap(ref a, ref c);
+                players[x].SetPosition(x); //This will asign defaul positioning for the players 
             }
-            if (a > b)
+            //The positions will then be sorted
+            for (int x = 0; x < Player.GetCount() - 1; x++) //Loops through all the players and gives them positions starting at 0
             {
-                Swap(ref a, ref b);
+                int min = x;
+
+                for (int j = x + 1; j < Player.GetCount(); j++)
+                {
+                    if (players[j].GetAnswer() < players[min].GetAnswer())
+                    {
+                        min = j;
+                    }
+                }
+
+                if (min != x)
+                {
+                    SwapPositions(players, min, x);
+                }
             }
-            if (b > c)
-            {
-                Swap(ref b, ref c);
-            }          
             //This will loop through the player's answers and assign them points based on how far their answer was
-            for(int x = 0; x < 3; x++)
+            for (int x = 0; x < Player.GetCount(); x++)
             {
-                if (answers[x] == a) //If the player's answer matched the closest, then the will receive the most points
-                {
-                    answers[x] = f1Scoring[0]; 
-                }
-                else if (answers[x] == b) //If two players guess the same number, then it is possible for them to tie each other
-                {
-                    answers[x] = f1Scoring[1];
-                }
-                else if (answers[x] == c) //Note that if the first two players tie for first, the third player will receive third place points
-                {
-                    answers[x] = f1Scoring[2];
-                }
+                points = f1Scoring[players[x].GetPosition()];
+                AddPoints(points, players[x]);
             }            
         }
         //Swaps two numbers
-        public static void Swap(ref int a, ref int b)
+        public static void SwapPositions(Player[] players, int x, int y)
         {
-            int temp = a;
-            a = b;
-            b = temp;
+            int temp = players[x].GetPosition();
+            players[x].SetPosition(players[y].GetPosition());
+            players[y].SetPosition(temp);
             
         }
         //This will simply output the scores for each player
