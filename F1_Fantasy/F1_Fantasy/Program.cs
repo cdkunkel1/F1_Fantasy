@@ -412,7 +412,14 @@ namespace F1_Fantasy
 
                 if (min != x)
                 {
-                    SwapPositions(players, min, x);
+                    SwapPositions(players, min, x); //Swaps positions to sort from least to greatest
+                }
+                for (int i = 0; i < Player.GetCount(); i++) //Checks to see if any players chose the same answer
+                {
+                    if (players[x].GetAnswer() == players[i].GetAnswer()) //If players chose the same answer, they will be put in the same position
+                    {
+                        players[i].SetPosition(players[x].GetPosition());
+                    }
                 }
             }
             //This will loop through the player's answers and assign them points based on how far their answer was
