@@ -44,35 +44,35 @@ namespace F1_Fantasy
             ClosestSelection(cnn, players, sql, f1Scoring);
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Dominant TM]"; //SQL statement to select data for the most dominant teammate
-            SingleSelection(cnn, player1, player2, player3, sql, f1Scoring);
+            SingleSelection(cnn, players, sql, f1Scoring);
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Podium Drivers]"; //SQL statement to select data for which drivers got a podium
             scoringStyle = 2; //Indicates a different type of scoring
-            Rankings(cnn, player1, player2, player3, sql, scoringStyle);
+            Rankings(cnn, players, sql, scoringStyle);
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Most Penalized T]"; //SQL statement to select data for the most penalized team
-            SingleSelection(cnn, player1, player2, player3, sql, f1Scoring);
+            SingleSelection(cnn, players, sql, f1Scoring);
 
             scoringStyle = 3;
             sql = @"SELECT * FROM [Formula_1].[dbo].[After Six Races]"; //SQL statement to select data for the WDC rankings after six races
-            Rankings(cnn, player1, player2, player3, sql, scoringStyle);
+            Rankings(cnn, players, sql, scoringStyle);
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Fewest Laps]"; //SQL statement to select data on the driver with the least amount of laps completed
-            SingleSelection(cnn, player1, player2, player3, sql, f1Scoring);
+            SingleSelection(cnn, players, sql, f1Scoring);
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Unbroken Lead]"; //SQL statement to select data on which race the WDC was won at
-            ClosestSelection(cnn, player1, player2, player3, sql, f1Scoring);
+            ClosestSelection(cnn, players, sql, f1Scoring);
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Race Retirements]"; //SQL statement to select data on the number of retirements per race
             scoringStyle = 1;
-            CheckIfPicked(cnn, player1, player2, player3, sql, scoringStyle);
+            CheckIfPicked(cnn, players, sql, scoringStyle);
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Random Events]"; //SQL statement to select data on the number of random events that occurred
-            ClosestSelection(cnn, player1, player2, player3, sql, f1Scoring);
+            ClosestSelection(cnn, players, sql, f1Scoring);
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Y/N Scenarios]"; //SQL statement to select data on whether or not certain events happened
             scoringStyle = 2;
-            CheckIfPicked(cnn, player1, player2, player3, sql, scoringStyle); 
+            CheckIfPicked(cnn, players, sql, scoringStyle); 
 
 
             CloseConnection(cnn);
@@ -219,9 +219,9 @@ namespace F1_Fantasy
             command.Dispose();
         }
         //This method will calculate how many points the players lose during the three races they selected for retirements
-        public static void CheckIfPicked(SqlConnection cnn, Player player1, Player player2, Player player3, string sql, int scoringStyle)
+        public static void CheckIfPicked(SqlConnection cnn, Player[] players, string sql, int scoringStyle)
         {
-            int[] answers = new int[3];
+            int[] answers = new int[20];
             int result = 0;
             string nullChecker = "";
             SqlCommand command = new SqlCommand(sql, cnn); //Executes the sql command to return the table
@@ -230,56 +230,33 @@ namespace F1_Fantasy
 
             while (dataReader.Read() && stop == false) //Reads the next line, stops if the results column is null
             {
-                if (scoringStyle == 1)
-                {
-                    nullChecker = dataReader.GetValue(5).ToString(); //Checks the value in the results column to make sure it is not null
-                    stop = CheckIfNull(nullChecker); //stop will return true if the value is null
-                }
-                else if (scoringStyle == 2)
-                {
-                    nullChecker = dataReader.GetValue(4).ToString(); //Checks the value in the results column to make sure it is not null
-                    stop = CheckIfNull(nullChecker); //stop will return true if the value is null
-                }
+                nullChecker = dataReader.GetValue(4).ToString(); //Checks the value in the results column to make sure it is not null
+                stop = CheckIfNull(nullChecker); //stop will return true if the value is null
 
                 if (stop == false)
-                {
-                    if (scoringStyle == 1)
+                {           
+                    for(int x = 0; x < Player.GetCount(); x++)
                     {
-                        answers[0] = dataReader.GetInt32(2); //Checks to see if the player chose the race
-                        answers[1] = dataReader.GetInt32(3);
-                        answers[2] = dataReader.GetInt32(4);
-                        result = dataReader.GetInt32(5);
+                        answers[x] = dataReader.GetInt32(x + 1); //Checks to see if the player chose a race, indicated by a 1
                     }
-                    else if (scoringStyle == 2) //Different columns must be read in the second scoring style
-                    {
-                        answers[0] = dataReader.GetInt32(1); //Checks to see if the player chose the race
-                        answers[1] = dataReader.GetInt32(2);
-                        answers[2] = dataReader.GetInt32(3);
-                        result = dataReader.GetInt32(4);
-                    }
+                    result = dataReader.GetInt32(Player.GetCount() + 1); //Stores the number of retirements for a race
 
                     if (scoringStyle == 1)
                     {
-
-
-                        if (answers[0] == 1) //If the player chose the race
+                        for (int x = 0; x < Player.GetCount(); x++)
                         {
-                            SubtractPoints(result, player1); //They lose five points for every retirement in their chose race
-                        }
-                        if (answers[1] == 1) //These will check to see if any of the players picked the race
-                        {
-                            SubtractPoints(result, player2);
-                        }
-                        if (answers[2] == 1)
-                        {
-                            SubtractPoints(result, player3);
+                            if (answers[x] == 1)
+                            {
+                                SubtractPoints(result, players[x]); //They lose five points for every retirement in their chose race
+                            }
                         }
                     }
                     else if (scoringStyle == 2)
                     {
-                        CheckEvent(result, player1, answers[0]);
-                        CheckEvent(result, player2, answers[1]);
-                        CheckEvent(result, player3, answers[2]);
+                        for (int x = 0; x < Player.GetCount(); x++)
+                        {
+                            CheckEvent(result, players[x], answers[x]); //Checks to see if the event happened or not and whether the player picked it
+                        }
                     }
                 }
             }
