@@ -8,6 +8,7 @@ namespace F1_Fantasy
     {
         private string name = ""; //Keeps track of the player's name
         private int points = 0; //Keeps track of how many points the player has
+        private static int count = 0;
 
         public Player(string name)
         {
@@ -41,6 +42,20 @@ namespace F1_Fantasy
             return points;
         }
 
+        public static int GetCount()
+        {
+            return count;
+        }
+
+        public static void SetCount(int temp)
+        {
+            count = temp;
+        }
+
+        public static void IncCount()
+        {
+            count++;
+        }
         //This method will return the values as a string
         public string ToString()
         {
