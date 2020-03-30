@@ -20,9 +20,10 @@ namespace F1_Fantasy
             OpenConnection(cnn); //Open the connection to the database
 
             //Use a Player class to keep track of names and points
-            Player player1 = new Player("Nathan");
-            Player player2 = new Player("Ben");
-            Player player3 = new Player("Cory");
+            Player[] players = new Player[20];
+            players[0] = new Player("Nathan");
+            players[1] = new Player("Ben");
+            players[2] = new Player("Cory");
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[WDC Rankings]"; //SQL statement to select data for Driver Rankings
             Rankings(cnn, player1, player2, player3, sql, scoringStyle);
