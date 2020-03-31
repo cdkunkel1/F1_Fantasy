@@ -10,6 +10,7 @@ namespace F1_Fantasy
         private int points = 0; //Keeps track of how many points the player has
         private int answer = 0;
         private int position = 0;
+        private int[] pointsByQuestion = new int[14];
         private static int count = 0;
 
         public Player(string name)
@@ -32,10 +33,15 @@ namespace F1_Fantasy
         {
             return answer;
         }
-
+        //This is a getter for the position
         public int GetPosition()
         {
             return position;
+        }
+
+        public int GetPointsByQuestion(int x)
+        {
+            return pointsByQuestion[x];
         }
         //This is a setter for the name
         public void SetName(string name)
@@ -52,10 +58,15 @@ namespace F1_Fantasy
         {
             this.answer = answer;
         }
-
+        //This is a setter for the position
         public void SetPosition(int position)
         {
             this.position = position;
+        }
+
+        public void SetPointsByQuestion(int points, int x)
+        {
+            this.pointsByQuestion[x] = points;
         }
         //This will be used to update the points a player has
         public int UpdatePoints(int changeInPoints)

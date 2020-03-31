@@ -28,58 +28,65 @@ namespace F1_Fantasy
             Player.IncCount();
             players[2] = new Player("Cory");
             Player.IncCount(); //Count is now at three for the number of players
+            Questions question = new Questions();
+            
+
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[WDC Rankings]"; //SQL statement to select data for Driver Rankings. Potential points is 100
-            Rankings(cnn, players, sql, scoringStyle);
+            Rankings(cnn, players, sql, scoringStyle, question.GetQuestionNumber(0));
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Constructor Rankings]"; //SQL statement to select data for constructor rankings. Potential points is 65
-            Rankings(cnn, players, sql, scoringStyle);
+            Rankings(cnn, players, sql, scoringStyle, question.GetQuestionNumber(1));
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Fastest Pit Stop]"; //SQL statement to select data for fastest pit stop. Potential points is 25
-            SingleSelection(cnn, players, sql, f1Scoring);
+            SingleSelection(cnn, players, sql, f1Scoring, question.GetQuestionNumber(2));
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Most DOD]"; //SQL statement to select data for most driver of the days. Potential points is 25
-            SingleSelection(cnn, players, sql, f1Scoring);
+            SingleSelection(cnn, players, sql, f1Scoring, question.GetQuestionNumber(3));
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Safety/VSC]"; //SQL statement to select data for number of safety cars and VSC's. Potential points is 25
-            ClosestSelection(cnn, players, sql, f1Scoring);
+            ClosestSelection(cnn, players, sql, f1Scoring, question.GetQuestionNumber(4));
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Dominant TM]"; //SQL statement to select data for the most dominant teammate. Potential points is 25
-            SingleSelection(cnn, players, sql, f1Scoring);
+            SingleSelection(cnn, players, sql, f1Scoring, question.GetQuestionNumber(5));
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Podium Drivers]"; //SQL statement to select data for which drivers got a podium. Potential points is 100
             scoringStyle = 2; //Indicates a different type of scoring
-            Rankings(cnn, players, sql, scoringStyle);
+            Rankings(cnn, players, sql, scoringStyle, question.GetQuestionNumber(6));
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Most Penalized T]"; //SQL statement to select data for the most penalized team. Potential points is 25
-            SingleSelection(cnn, players, sql, f1Scoring);
+            SingleSelection(cnn, players, sql, f1Scoring, question.GetQuestionNumber(7));
 
             scoringStyle = 3;
             sql = @"SELECT * FROM [Formula_1].[dbo].[After Six Races]"; //SQL statement to select data for the WDC rankings after six races. Potential points is 30
-            Rankings(cnn, players, sql, scoringStyle);
+            Rankings(cnn, players, sql, scoringStyle, question.GetQuestionNumber(8));
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Fewest Laps]"; //SQL statement to select data on the driver with the least amount of laps completed. Potential points is 25
-            SingleSelection(cnn, players, sql, f1Scoring);
+            SingleSelection(cnn, players, sql, f1Scoring, question.GetQuestionNumber(9));
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Unbroken Lead]"; //SQL statement to select data on which race the WDC was won at. Potential points is 25
-            ClosestSelection(cnn, players, sql, f1Scoring);
+            ClosestSelection(cnn, players, sql, f1Scoring, question.GetQuestionNumber(10));
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Race Retirements]"; //SQL statement to select data on the number of retirements per race. Potential points to gain is 0
             scoringStyle = 1;
-            CheckIfPicked(cnn, players, sql, scoringStyle);
+            CheckIfPicked(cnn, players, sql, scoringStyle, question.GetQuestionNumber(11));
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Random Events]"; //SQL statement to select data on the number of random events that occurred. Potential points is 25
-            ClosestSelection(cnn, players, sql, f1Scoring);
+            ClosestSelection(cnn, players, sql, f1Scoring, question.GetQuestionNumber(12));
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Y/N Scenarios]"; //SQL statement to select data on whether or not certain events happened. Potential points is 40
             scoringStyle = 2;
-            CheckIfPicked(cnn, players, sql, scoringStyle); 
+            CheckIfPicked(cnn, players, sql, scoringStyle, question.GetQuestionNumber(13)); 
 
 
             CloseConnection(cnn);
 
+            PlayerReports playerReport = new PlayerReports(players, question.GetQuestionNameArray(), question.GetQuestionNumberArray());
+
             F1Car(); //Displays an F1 Car
             DisplayPoints(players);
+            playerReport.PrintAllScores();
+
 
             Console.ReadKey();
         }
@@ -94,7 +101,7 @@ namespace F1_Fantasy
             cnn.Close();
         }
         
-        public static void Rankings(SqlConnection cnn, Player[] players, string sql, int scoringStyle)
+        public static void Rankings(SqlConnection cnn, Player[] players, string sql, int scoringStyle, int questionNumber)
         {
             int[] answers = new int[30]; //These are set at 30 to account for any new drivers or teams
             string nullChecker = "";
@@ -122,17 +129,17 @@ namespace F1_Fantasy
                 if (stop == false && scoringStyle == 1) //Will not add points if the results values are null
                 {
                     result[count] = -1; //This will be the sentinel value
-                    AddPoints(answers, result, players[x]);
+                    AddPoints(answers, result, players[x], questionNumber);
                 }
                 else if (stop == false && scoringStyle == 2) //This is a different scoring style based on the question
                 {
                     result[count] = -1;
-                    ChangePoints(answers, result, players[x]);
+                    ChangePoints(answers, result, players[x], questionNumber);
                 }
                 else if (stop == false && scoringStyle == 3) //Different scoring style
                 {
                     result[count] = -1;
-                    AddPointsV2(answers, result, players[x]);
+                    AddPointsV2(answers, result, players[x], questionNumber);
 
                 }
                 //Close the connection
@@ -141,7 +148,7 @@ namespace F1_Fantasy
             }
         }
         //This method will be used to calculate points from the fastest pit stop question
-        public static void SingleSelection(SqlConnection cnn, Player[] players, string sql, int[] f1Scoring)
+        public static void SingleSelection(SqlConnection cnn, Player[] players, string sql, int[] f1Scoring, int questionNumber)
         {
             string[] results = new string[30]; //Stores the actual results
             string[] answers = new string[20]; //Stores the player guesses
@@ -176,7 +183,7 @@ namespace F1_Fantasy
             {
                 for (int x = 0; x < Player.GetCount(); x++)
                 {
-                    AddPoints(answers[x], results, f1Scoring, players[x]); //Adds points for each player
+                    AddPoints(answers[x], results, f1Scoring, players[x], questionNumber); //Adds points for each player
                 }
             }
             //Close the connection
@@ -184,7 +191,7 @@ namespace F1_Fantasy
             command.Dispose();
         }
 
-        public static void ClosestSelection(SqlConnection cnn, Player[] players, string sql, int[] f1Scoring)
+        public static void ClosestSelection(SqlConnection cnn, Player[] players, string sql, int[] f1Scoring, int questionNumber)
         {
             int[] answers = new int[20];
             int result = 0;
@@ -213,7 +220,7 @@ namespace F1_Fantasy
             if (stop == false)
             {
                 GetDistance(players, result); //Finds how far the player's were from the results
-                SortAnswers(f1Scoring, players);
+                SortAnswers(f1Scoring, players, questionNumber);
             }
 
             //Close the connection
@@ -221,7 +228,7 @@ namespace F1_Fantasy
             command.Dispose();
         }
         //This method will calculate how many points the players lose during the three races they selected for retirements
-        public static void CheckIfPicked(SqlConnection cnn, Player[] players, string sql, int scoringStyle)
+        public static void CheckIfPicked(SqlConnection cnn, Player[] players, string sql, int scoringStyle, int questionNumber)
         {
             int[] answers = new int[20];
             int result = 0;
@@ -249,7 +256,7 @@ namespace F1_Fantasy
                         {
                             if (answers[x] == 1)
                             {
-                                SubtractPoints(result, players[x]); //They lose five points for every retirement in their chose race
+                                SubtractPoints(result, players[x], questionNumber); //They lose five points for every retirement in their chose race
                             }
                         }
                     }
@@ -257,7 +264,7 @@ namespace F1_Fantasy
                     {
                         for (int x = 0; x < Player.GetCount(); x++)
                         {
-                            CheckEvent(result, players[x], answers[x]); //Checks to see if the event happened or not and whether the player picked it
+                            CheckEvent(result, players[x], answers[x], questionNumber); //Checks to see if the event happened or not and whether the player picked it
                         }
                     }
                 }
@@ -277,7 +284,7 @@ namespace F1_Fantasy
             return stop;
         }
         //This method will loop through the results and add points for each player
-        public static void AddPoints(string answer, string[] results, int[] f1Scoring, Player player)
+        public static void AddPoints(string answer, string[] results, int[] f1Scoring, Player player, int questionNumber)
         {
             int count = 0;
             while (results[count] != "stop") //Loops through all 10 results
@@ -285,12 +292,13 @@ namespace F1_Fantasy
                 if (answer == results[count]) //When the player's answer matches the results, they gain points
                 {
                     player.UpdatePoints(f1Scoring[count]); //Points are updated with F1 scoring style, meaning 25 for first, 18 for second, etc.
+                    player.SetPointsByQuestion(f1Scoring[count], questionNumber);
                 }
                 count++;
             }
         }
         //This method will check values within a range and add points
-        public static void AddPoints(int[] answers, int[] results, Player player)
+        public static void AddPoints(int[] answers, int[] results, Player player, int questionNumber)
         {
             int count = 0;
             const int CORRECT = 5; //Player gains 5 points if they are exact
@@ -300,16 +308,18 @@ namespace F1_Fantasy
                 if (answers[count] == results[count]) //When the player's answer matches the results, they gain points
                 {
                     player.UpdatePoints(CORRECT); //If they are exact, the player will gain five points
+                    player.SetPointsByQuestion(CORRECT, questionNumber); //Assigns the number of points earned by this question
                 }
                 else if ((results[count] - 2) < answers[count] && answers[count] < (results[count] + 2)) //If the player was within 2, they gain 2 points
                 {
                     player.UpdatePoints(SLIGHTLY_OFF);
+                    player.SetPointsByQuestion(SLIGHTLY_OFF, questionNumber); //Assigns the number of points earned by this question
                 }
                 count++; //Increment the count
             }
         }
         //This method will check to see if a driver was guessed or not
-        public static void ChangePoints(int[] answers, int[] results, Player player)
+        public static void ChangePoints(int[] answers, int[] results, Player player, int questionNumber)
         {
             int count = 0;
             const int CORRECT = 5; //Player gains 5 points if they are exact
@@ -319,21 +329,24 @@ namespace F1_Fantasy
                 if (answers[count] == results[count]) //When the player's answer matches the results, they gain points
                 {
                     player.UpdatePoints(CORRECT); //If the player guessed right, they will gain five points
+                    player.SetPointsByQuestion(CORRECT, questionNumber); //Assigns the number of points earned by this question
                 }
                 else
                 {
                     player.UpdatePoints(INCORRECT); //If the player guessed wrong or missed one, they lose three points
+                    player.SetPointsByQuestion(INCORRECT, questionNumber); //Assigns the number of points earned by this question
                 }
                 count++; //Increment the count
             }
         }
         //Adds a specific number of points for a player
-        public static void AddPoints(int f1Scoring, Player player)
+        public static void AddPoints(int f1Scoring, Player player, int questionNumber)
         {
             player.UpdatePoints(f1Scoring);
+            player.SetPointsByQuestion(f1Scoring, questionNumber); //Assigns the number of points earned by this question
         }
         //This method will check values within a range and add points
-        public static void AddPointsV2(int[] answers, int[] results, Player player)
+        public static void AddPointsV2(int[] answers, int[] results, Player player, int questionNumber)
         {
             int count = 0;
             const int CORRECT = 5; //Player gains 5 points if they are exact
@@ -344,26 +357,30 @@ namespace F1_Fantasy
                 if (answers[count] == results[count]) //When the player's answer matches the results, they gain points
                 {
                     player.UpdatePoints(CORRECT); //If they are exact, the player will gain five points
+                    player.SetPointsByQuestion(CORRECT, questionNumber); //Assigns the number of points earned by this question
                 }
                 else if ((results[count] - 1) < answers[count] && answers[count] < (results[count] + 1)) //If the player was within 2, they gain 2 points
                 {
                     player.UpdatePoints(ONE_OFF);
+                    player.SetPointsByQuestion(ONE_OFF, questionNumber); //Assigns the number of points earned by this question
                 }
                 else if ((results[count] - 2) < answers[count] && answers[count] < (results[count] + 2)) //If the player was within 2, they gain 2 points
                 {
                     player.UpdatePoints(TWO_OFF);
+                    player.SetPointsByQuestion(TWO_OFF, questionNumber); //Assigns the number of points earned by this question
                 }
                 count++; //Increment the count
             }
         }
         //This method will subtract points from the player for every retirement in a selected race
-        public static void SubtractPoints(int result, Player player)
+        public static void SubtractPoints(int result, Player player, int questionNumber)
         {
             int pointsLost = (result * -5);
             player.UpdatePoints(pointsLost);
+            player.SetPointsByQuestion(pointsLost, questionNumber); //Assigns the number of points earned by this question
         }
         //This method will check to see if the user correctly guessed true or false for events and will add points as a result
-        public static void CheckEvent(int results, Player player, int answer)
+        public static void CheckEvent(int results, Player player, int answer, int questionNumber)
         {
             const int CORRECT_TRUE = 5;
             const int CORRECT_FALSE = 3;
@@ -372,14 +389,17 @@ namespace F1_Fantasy
             if (results == 1 && results == answer) //If the user correctly guessed true, then they will gain 5 points
             {
                 player.UpdatePoints(CORRECT_TRUE);
+                player.SetPointsByQuestion(CORRECT_TRUE, questionNumber); //Assigns the number of points earned by this question
             }
             else if (results == 0 && results == answer) //If the user correctly guessed false, then they will gain 3 points
             {
                 player.UpdatePoints(CORRECT_FALSE);
+                player.SetPointsByQuestion(CORRECT_FALSE, questionNumber); //Assigns the number of points earned by this question
             }
             else //If the user guessed incorrectly, then they lose three points
             {
                 player.UpdatePoints(INCORRECT);
+                player.SetPointsByQuestion(INCORRECT, questionNumber); //Assigns the number of points earned by this question
             }
         }
         //This method will return the player's answers as their distances from the answer
@@ -391,7 +411,7 @@ namespace F1_Fantasy
             }
         }
         //Sorts the player's answers from closest to furthest then gives them points
-        public static void SortAnswers(int[] f1Scoring, Player[] players)
+        public static void SortAnswers(int[] f1Scoring, Player[] players, int questionNumber)
         {
             int points = 0;
 
@@ -428,7 +448,7 @@ namespace F1_Fantasy
             for (int x = 0; x < Player.GetCount(); x++)
             {
                 points = f1Scoring[players[x].GetPosition()];
-                AddPoints(points, players[x]);
+                AddPoints(points, players[x], questionNumber);
             }            
         }
         //Swaps two numbers
