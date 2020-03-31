@@ -16,6 +16,8 @@ namespace F1_Fantasy
             string sql = "";
             string conString = @"Data Source = (LocalDB)\Formula_1; Initial Catalog = Formula_1; Integrated Security = True"; //This is the connection string for the F1 database
             int scoringStyle = 1; //Will be used to indicate a different type of scoring when using the Ranking() method
+            Boolean exit = false;
+            int menuChoice = 0;
 
             SqlConnection cnn = new SqlConnection(conString); //Create a SQL Connection object to connect to the F1 Database
             OpenConnection(cnn); //Open the connection to the database
@@ -83,12 +85,24 @@ namespace F1_Fantasy
 
             PlayerReports playerReport = new PlayerReports(players, question.GetQuestionNameArray(), question.GetQuestionNumberArray());
 
-            F1Car(); //Displays an F1 Car
-            DisplayPoints(players);
-            playerReport.PrintAllScores();
-
-
-            Console.ReadKey();
+            while (exit == false)
+            {
+                F1Car(); //Displays an F1 Car
+                DisplayMenu();
+                menuChoice = GetUserInput();
+                switch(menuChoice)
+                {
+                    case 1: DisplayPoints(players);
+                        break;
+                    case 2: playerReport.PrintAllScores();
+                        break;
+                    case 3: exit = ExitMessage();
+                        break;
+                }
+                Console.WriteLine("Press any key to continue");
+                Console.ReadKey();
+                Console.Clear();
+            }
         }
         //This method will open a connection to the SQL server
         public static void OpenConnection(SqlConnection cnn)
@@ -483,6 +497,44 @@ namespace F1_Fantasy
             Console.WriteLine(@"        \        /  ___________________________________________________________  \        /  ___  |_________| ");
             Console.WriteLine(@"          ------                                                                   -------     ");
             Console.WriteLine("\n");
+        }
+        //This will display a menu of application options for the user
+        public static void DisplayMenu()
+        {
+            Console.WriteLine("It's the final few seconds before the lights go out, and the race to the podium begins...\n");
+            Console.WriteLine("Fantasy F1");
+            Console.WriteLine("Please enter an option from the menu\n");
+            Console.WriteLine("1. Current Points");
+            Console.WriteLine("2. Points Earned by Question");
+            Console.WriteLine("3. Exit");
+        }
+        //Gets the user input for the main menu
+        public static int GetUserInput()
+        {
+            string userInputString = "";
+            int userInput = 0;
+
+            userInputString = Console.ReadLine();
+
+            while (userInputString != "1" && userInputString != "2" && userInputString != "3") //Ensures that user enters a number from the menu
+            {
+                Console.WriteLine("Please enter a number from the menu");
+                userInputString = Console.ReadLine();
+            }
+            while (!int.TryParse(userInputString, out userInput)) //If the string can't be parsed to a int, then it will repeat and display an error message
+            {
+                Console.WriteLine("Please enter a number from the menu\n");
+                userInputString = Console.ReadLine();
+            }
+            Console.Clear();
+            return userInput;
+        }
+
+        public static Boolean ExitMessage()
+        {
+            Boolean exit = true;
+            Console.WriteLine("Thanks for playing!\n");
+            return exit;
         }
     }
 }
