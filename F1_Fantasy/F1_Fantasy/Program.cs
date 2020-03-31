@@ -18,6 +18,7 @@ namespace F1_Fantasy
             int scoringStyle = 1; //Will be used to indicate a different type of scoring when using the Ranking() method
             Boolean exit = false;
             int menuChoice = 0;
+            string rankingType = "";
 
             SqlConnection cnn = new SqlConnection(conString); //Create a SQL Connection object to connect to the F1 Database
             OpenConnection(cnn); //Open the connection to the database
@@ -81,28 +82,40 @@ namespace F1_Fantasy
             CheckIfPicked(cnn, players, sql, scoringStyle, question.GetQuestionNumber(13)); 
 
 
-            CloseConnection(cnn);
-
             PlayerReports playerReport = new PlayerReports(players, question.GetQuestionNameArray(), question.GetQuestionNumberArray());
 
-            while (exit == false)
+            while (exit == false) //Continues until the user chooses to quit
             {
                 F1Car(); //Displays an F1 Car
-                DisplayMenu();
+                DisplayMenu(); //Displays a user with menu options to the user
                 menuChoice = GetUserInput();
-                switch(menuChoice)
+                switch(menuChoice) //Checks the user's menu choice
                 {
-                    case 1: DisplayPoints(players);
+                    case 1: 
+                        DisplayPoints(players); //Displays current number of points by player
                         break;
-                    case 2: playerReport.PrintAllScores();
+                    case 2: 
+                        playerReport.PrintAllScores(); //Prints all the questions and number of points given by each
                         break;
-                    case 3: exit = ExitMessage();
+                    case 3: 
+                        sql = @"SELECT * FROM [Formula_1].[dbo].[WDC Rankings] ORDER BY [Results] ASC";
+                        rankingType = "Driver Rankings + Points";
+                        DisplayRankings(cnn, sql, rankingType);
+                        break;
+                    case 4:
+                        sql = @"SELECT * FROM [Formula_1].[dbo].[Constructor Rankings] ORDER BY [Results] ASC";
+                        rankingType = "Constructor Rankings + Points";
+                        DisplayRankings(cnn, sql, rankingType);
+                        break;
+                    case 5: 
+                        exit = ExitMessage();
                         break;
                 }
                 Console.WriteLine("Press any key to continue");
                 Console.ReadKey();
                 Console.Clear();
             }
+            CloseConnection(cnn);
         }
         //This method will open a connection to the SQL server
         public static void OpenConnection(SqlConnection cnn)
@@ -124,6 +137,7 @@ namespace F1_Fantasy
             int count = 0;
             for (int x = 0; x < Player.GetCount(); x++)
             {
+                count = 0;
                 SqlCommand command = new SqlCommand(sql, cnn); //Executes the sql command to return the table
                 SqlDataReader dataReader = command.ExecuteReader(); //Begin to read the table
                 while (dataReader.Read() && stop == false) //Reads the next line, stops if the results column is null 
@@ -140,6 +154,10 @@ namespace F1_Fantasy
                     }
                     count++;
                 }
+                result[count] = -1;
+                //Close the connection
+                dataReader.Close();
+                command.Dispose();
                 if (stop == false && scoringStyle == 1) //Will not add points if the results values are null
                 {
                     result[count] = -1; //This will be the sentinel value
@@ -156,9 +174,7 @@ namespace F1_Fantasy
                     AddPointsV2(answers, result, players[x], questionNumber);
 
                 }
-                //Close the connection
-                dataReader.Close();
-                command.Dispose();
+                
             }
         }
         //This method will be used to calculate points from the fastest pit stop question
@@ -315,6 +331,7 @@ namespace F1_Fantasy
         public static void AddPoints(int[] answers, int[] results, Player player, int questionNumber)
         {
             int count = 0;
+            int pointsTracker = 0; //This will be used to keep track of the total points earned by the player on this question
             const int CORRECT = 5; //Player gains 5 points if they are exact
             const int SLIGHTLY_OFF = 2; //Player gains 2 points if they are within 2
             while (results[count] != -1) //Loops through all the results. -1 is the sentinel value
@@ -322,15 +339,16 @@ namespace F1_Fantasy
                 if (answers[count] == results[count]) //When the player's answer matches the results, they gain points
                 {
                     player.UpdatePoints(CORRECT); //If they are exact, the player will gain five points
-                    player.SetPointsByQuestion(CORRECT, questionNumber); //Assigns the number of points earned by this question
+                    pointsTracker += CORRECT;
                 }
                 else if ((results[count] - 2) < answers[count] && answers[count] < (results[count] + 2)) //If the player was within 2, they gain 2 points
                 {
                     player.UpdatePoints(SLIGHTLY_OFF);
-                    player.SetPointsByQuestion(SLIGHTLY_OFF, questionNumber); //Assigns the number of points earned by this question
+                    pointsTracker += SLIGHTLY_OFF;
                 }
                 count++; //Increment the count
             }
+            player.SetPointsByQuestion(pointsTracker, questionNumber);
         }
         //This method will check to see if a driver was guessed or not
         public static void ChangePoints(int[] answers, int[] results, Player player, int questionNumber)
@@ -482,6 +500,21 @@ namespace F1_Fantasy
                 Console.WriteLine(players[x].ToString());
             }
         }
+        //Displays the current standings for the drivers
+        public static void DisplayRankings(SqlConnection cnn, string sql, string rankings)
+        {
+            SqlCommand command = new SqlCommand(sql, cnn); //Executes the sql command to return the table
+            SqlDataReader dataReader = command.ExecuteReader(); //Begin to read the table
+
+            Console.WriteLine(rankings);
+            while (dataReader.Read()) //Reads the next line, stops if the results column is null 
+            {
+                Console.WriteLine(dataReader.GetInt32(4) + "\t" + dataReader.GetValue(0).ToString().PadRight(20) + "\t" + dataReader.GetInt32(5)); 
+            }
+            //Close the connection
+            dataReader.Close();
+            command.Dispose();
+        }
         //Just something I made that I thought was cool
         public static void F1Car()
         {
@@ -506,7 +539,9 @@ namespace F1_Fantasy
             Console.WriteLine("Please enter an option from the menu\n");
             Console.WriteLine("1. Current Points");
             Console.WriteLine("2. Points Earned by Question");
-            Console.WriteLine("3. Exit");
+            Console.WriteLine("3. Current WDC Standings");
+            Console.WriteLine("4. Current Constructor Standings");
+            Console.WriteLine("5. Exit");
         }
         //Gets the user input for the main menu
         public static int GetUserInput()
@@ -516,7 +551,7 @@ namespace F1_Fantasy
 
             userInputString = Console.ReadLine();
 
-            while (userInputString != "1" && userInputString != "2" && userInputString != "3") //Ensures that user enters a number from the menu
+            while (userInputString != "1" && userInputString != "2" && userInputString != "3" && userInputString != "4" && userInputString != "5") //Ensures that user enters a number from the menu
             {
                 Console.WriteLine("Please enter a number from the menu");
                 userInputString = Console.ReadLine();
