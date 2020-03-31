@@ -81,11 +81,11 @@ namespace F1_Fantasy
 
             CloseConnection(cnn);
 
-            PlayerReports playerReport = new PlayerReports(players);
-
+            PlayerReports playerReport = new PlayerReports(players, question.GetQuestionNameArray(), question.GetQuestionNumberArray());
 
             F1Car(); //Displays an F1 Car
             DisplayPoints(players);
+            playerReport.PrintAllScores();
 
 
             Console.ReadKey();
@@ -467,8 +467,6 @@ namespace F1_Fantasy
             {
                 Console.WriteLine(players[x].ToString());
             }
-            Console.WriteLine("Enter any character to see the breakdown of earned points per question\n");
-            Console.ReadKey();
         }
         //Just something I made that I thought was cool
         public static void F1Car()

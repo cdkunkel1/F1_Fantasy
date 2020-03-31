@@ -7,17 +7,29 @@ namespace F1_Fantasy
     class PlayerReports
     {
         Player[] players;
+        private string[] questions;
+        private int[] questionNumbers;
+        private string dashLine = "-----------------------------------------";
 
-        public PlayerReports(Player[] temp)
+        //Constructor that passes in the players array, questions array, and the question numbers array
+        public PlayerReports(Player[] players, string[] questions, int[] questionNumbers)
         {
-            this.players = temp;
+            this.players = players;
+            this.questions = questions;
+            this.questionNumbers = questionNumbers;
         }
-
+        //Prints out the questions along with the points earned by each player
         public void PrintAllScores()
         {
-            for (int x = 0; x < Player.GetCount(); x++)
+            for (int x = 0; x < questionNumbers.Length; x++)
             {
-                Console.WriteLine(players[x].GetPointsByQuestion())
+                Console.WriteLine(dashLine);
+                Console.WriteLine(questions[x]);
+                Console.WriteLine(dashLine);
+                for (int i = 0; i < Player.GetCount(); i++)
+                {
+                    Console.Write(players[i].GetName() + ": " + players[i].GetPointsByQuestion(x) + "\n");
+                }
             }
         }
     }

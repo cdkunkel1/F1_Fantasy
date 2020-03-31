@@ -21,7 +21,16 @@ namespace F1_Fantasy
         {
             return questionNumber[number];
         }
+        
+        public string[] GetQuestionNameArray()
+        {
+            return questionName;
+        }
 
+        public int[] GetQuestionNumberArray()
+        {
+            return questionNumber;
+        }
         public void SetQuestionName(int number, string questionName)
         {
             this.questionName[number] = questionName;
