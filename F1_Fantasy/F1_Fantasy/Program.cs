@@ -2,7 +2,12 @@
 using System.IO;
 using System.Data;
 using System.Data.SqlClient;
-
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Net.Http.Headers;
+using System.Collections.Generic;
+using System.Net;
+using Newtonsoft.Json;
 
 namespace F1_Fantasy
 {
@@ -13,12 +18,20 @@ namespace F1_Fantasy
             //Declare Variables
             int[] f1Scoring = { 25, 18, 15, 12, 10, 8, 6, 4, 2, 1 };
             int[] potentialPoints = { 100, 65, 25, 25, 25, 25, 100, 25, 30, 25, 25, 0, 25, 40 };
+            
+            int[] position = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 };
+
             string sql = "";
             string conString = @"Data Source = (LocalDB)\Formula_1; Initial Catalog = Formula_1; Integrated Security = True"; //This is the connection string for the F1 database
             int scoringStyle = 1; //Will be used to indicate a different type of scoring when using the Ranking() method
             Boolean exit = false;
             int menuChoice = 0;
             string rankingType = "";
+
+            //CallWebAPIAsync().Wait();
+            var url = "https://ergast.com/api/f1/2019/driverStandings.json";
+            var RootObject = _download_serialized_json_data<RootObject>(url);
+            //Console.WriteLine(MRData.StandingsTable.StandingsLists.DriverStandings.Get(0));
 
             SqlConnection cnn = new SqlConnection(conString); //Create a SQL Connection object to connect to the F1 Database
             OpenConnection(cnn); //Open the connection to the database
@@ -117,6 +130,43 @@ namespace F1_Fantasy
             }
             CloseConnection(cnn);
         }
+
+        private static T _download_serialized_json_data<T>(string url) where T : new()
+        {
+            using (var w = new WebClient())
+            {
+                var json_data = string.Empty;
+                // attempt to download JSON data as a string
+                try
+                {
+                    json_data = w.DownloadString(url);
+                }
+                catch (Exception) { }
+                // if string with JSON data is not empty, deserialize it to class and return its instance 
+                return !string.IsNullOrEmpty(json_data) ? JsonConvert.DeserializeObject<T>(json_data) : new T();
+            }
+        }
+
+        /*static async Task CallWebAPIAsync()
+        {
+            using (var client = new HttpClient())
+            {
+                client.BaseAddress = new Uri(@"https://ergast.com/");
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                //GET Method  
+                HttpResponseMessage response = await client.GetAsync("api/f1/2019/driverStandings.json");
+                if (response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine("Success");
+                }
+                else
+                {
+                    Console.WriteLine("Internal server Error");
+                }
+            }
+        }*/
+
         //This method will open a connection to the SQL server
         public static void OpenConnection(SqlConnection cnn)
         {
@@ -571,5 +621,64 @@ namespace F1_Fantasy
             Console.WriteLine("Thanks for playing!\n");
             return exit;
         }
+    }
+
+    public class Driver
+    {
+        public string driverId { get; set; }
+        public string permanentNumber { get; set; }
+        public string code { get; set; }
+        public string url { get; set; }
+        public string givenName { get; set; }
+        public string familyName { get; set; }
+        public string dateOfBirth { get; set; }
+        public string nationality { get; set; }
+    }
+
+    public class Constructor
+    {
+        public string constructorId { get; set; }
+        public string url { get; set; }
+        public string name { get; set; }
+        public string nationality { get; set; }
+    }
+
+    public class DriverStanding
+    {
+        public string position { get; set; }
+        public string positionText { get; set; }
+        public string points { get; set; }
+        public string wins { get; set; }
+        public Driver Driver { get; set; }
+        public List<Constructor> Constructors { get; set; }
+    }
+
+    public class StandingsList
+    {
+        public string season { get; set; }
+        public string round { get; set; }
+        public List<DriverStanding> DriverStandings { get; set; }
+    }
+
+    public class StandingsTable
+    {
+        public string season { get; set; }
+        public List<StandingsList> StandingsLists { get; set; }
+    }
+
+    public class MRData
+    {
+        public string xmlns { get; set; }
+        public string series { get; set; }
+        public string url { get; set; }
+        public string limit { get; set; }
+        public string offset { get; set; }
+        public string total { get; set; }
+        public StandingsTable StandingsTable { get; set; }
+    }
+
+    public class RootObject
+    {
+        public MRData MRData { get; set; }
     }
 }
