@@ -2,7 +2,12 @@
 using System.IO;
 using System.Data;
 using System.Data.SqlClient;
-
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Net.Http.Headers;
+using System.Collections.Generic;
+using System.Net;
+using Newtonsoft.Json;
 
 namespace F1_Fantasy
 {
@@ -13,9 +18,27 @@ namespace F1_Fantasy
             //Declare Variables
             int[] f1Scoring = { 25, 18, 15, 12, 10, 8, 6, 4, 2, 1 };
             int[] potentialPoints = { 100, 65, 25, 25, 25, 25, 100, 25, 30, 25, 25, 0, 25, 40 };
+            
+            int[] position = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 };
+
+            int count = 0;
             string sql = "";
             string conString = @"Data Source = (LocalDB)\Formula_1; Initial Catalog = Formula_1; Integrated Security = True"; //This is the connection string for the F1 database
             int scoringStyle = 1; //Will be used to indicate a different type of scoring when using the Ranking() method
+            Boolean exit = false;
+            int menuChoice = 0;
+            string rankingType = "";
+
+            var url = "https://ergast.com/api/f1/2019/driverStandings.json"; //URL link for the API
+            var RootObject = _download_serialized_json_data<RootObject>(url); //Deserialize the json data into objects
+            List<DriverStanding> standings = new List<DriverStanding>(); //Create a new list that will make it easier to access the API data
+            foreach(DriverStanding standing in RootObject.MRData.StandingsTable.StandingsLists[0].DriverStandings) //Populate the list with each value found in driver standings
+            {
+                standings.Add(RootObject.MRData.StandingsTable.StandingsLists[0].DriverStandings[count]);
+                count++; //Keep track of how many elements were added to the list
+            }
+            
+            //Console.WriteLine(driverStandings[0].Constructors[0].name);
 
             SqlConnection cnn = new SqlConnection(conString); //Create a SQL Connection object to connect to the F1 Database
             OpenConnection(cnn); //Open the connection to the database
@@ -79,17 +102,81 @@ namespace F1_Fantasy
             CheckIfPicked(cnn, players, sql, scoringStyle, question.GetQuestionNumber(13)); 
 
 
-            CloseConnection(cnn);
-
             PlayerReports playerReport = new PlayerReports(players, question.GetQuestionNameArray(), question.GetQuestionNumberArray());
 
-            F1Car(); //Displays an F1 Car
-            DisplayPoints(players);
-            playerReport.PrintAllScores();
-
-
-            Console.ReadKey();
+            while (exit == false) //Continues until the user chooses to quit
+            {
+                F1Car(); //Displays an F1 Car
+                DisplayMenu(); //Displays a user with menu options to the user
+                menuChoice = GetUserInput();
+                switch(menuChoice) //Checks the user's menu choice
+                {
+                    case 1: 
+                        DisplayPoints(players); //Displays current number of points by player
+                        break;
+                    case 2: 
+                        playerReport.PrintAllScores(); //Prints all the questions and number of points given by each
+                        break;
+                    /*case 3: 
+                        sql = @"SELECT * FROM [Formula_1].[dbo].[WDC Rankings] ORDER BY [Results] ASC";
+                        rankingType = "Driver Rankings + Points";
+                        DisplayRankings(cnn, sql, rankingType);
+                        break;*/
+                    case 3:
+                        DisplayDriverRankings(standings, count);
+                        break;
+                    case 4:
+                        sql = @"SELECT * FROM [Formula_1].[dbo].[Constructor Rankings] ORDER BY [Results] ASC";
+                        rankingType = "Constructor Rankings + Points";
+                        //DisplayConstructorRankings(standings, count);
+                        break;
+                    case 5: 
+                        exit = ExitMessage();
+                        break;
+                }
+                Console.WriteLine("Press any key to continue");
+                Console.ReadKey();
+                Console.Clear();
+            }
+            CloseConnection(cnn);
         }
+
+        private static T _download_serialized_json_data<T>(string url) where T : new()
+        {
+            using (var w = new WebClient())
+            {
+                var json_data = string.Empty;
+                // attempt to download JSON data as a string
+                try
+                {
+                    json_data = w.DownloadString(url);
+                }
+                catch (Exception) { }
+                // if string with JSON data is not empty, deserialize it to class and return its instance 
+                return !string.IsNullOrEmpty(json_data) ? JsonConvert.DeserializeObject<T>(json_data) : new T();
+            }
+        }
+
+        /*static async Task CallWebAPIAsync()
+        {
+            using (var client = new HttpClient())
+            {
+                client.BaseAddress = new Uri(@"https://ergast.com/");
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                //GET Method  
+                HttpResponseMessage response = await client.GetAsync("api/f1/2019/driverStandings.json");
+                if (response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine("Success");
+                }
+                else
+                {
+                    Console.WriteLine("Internal server Error");
+                }
+            }
+        }*/
+
         //This method will open a connection to the SQL server
         public static void OpenConnection(SqlConnection cnn)
         {
@@ -110,6 +197,7 @@ namespace F1_Fantasy
             int count = 0;
             for (int x = 0; x < Player.GetCount(); x++)
             {
+                count = 0;
                 SqlCommand command = new SqlCommand(sql, cnn); //Executes the sql command to return the table
                 SqlDataReader dataReader = command.ExecuteReader(); //Begin to read the table
                 while (dataReader.Read() && stop == false) //Reads the next line, stops if the results column is null 
@@ -126,6 +214,10 @@ namespace F1_Fantasy
                     }
                     count++;
                 }
+                result[count] = -1;
+                //Close the connection
+                dataReader.Close();
+                command.Dispose();
                 if (stop == false && scoringStyle == 1) //Will not add points if the results values are null
                 {
                     result[count] = -1; //This will be the sentinel value
@@ -142,9 +234,7 @@ namespace F1_Fantasy
                     AddPointsV2(answers, result, players[x], questionNumber);
 
                 }
-                //Close the connection
-                dataReader.Close();
-                command.Dispose();
+                
             }
         }
         //This method will be used to calculate points from the fastest pit stop question
@@ -301,6 +391,7 @@ namespace F1_Fantasy
         public static void AddPoints(int[] answers, int[] results, Player player, int questionNumber)
         {
             int count = 0;
+            int pointsTracker = 0; //This will be used to keep track of the total points earned by the player on this question
             const int CORRECT = 5; //Player gains 5 points if they are exact
             const int SLIGHTLY_OFF = 2; //Player gains 2 points if they are within 2
             while (results[count] != -1) //Loops through all the results. -1 is the sentinel value
@@ -308,15 +399,16 @@ namespace F1_Fantasy
                 if (answers[count] == results[count]) //When the player's answer matches the results, they gain points
                 {
                     player.UpdatePoints(CORRECT); //If they are exact, the player will gain five points
-                    player.SetPointsByQuestion(CORRECT, questionNumber); //Assigns the number of points earned by this question
+                    pointsTracker += CORRECT;
                 }
                 else if ((results[count] - 2) < answers[count] && answers[count] < (results[count] + 2)) //If the player was within 2, they gain 2 points
                 {
                     player.UpdatePoints(SLIGHTLY_OFF);
-                    player.SetPointsByQuestion(SLIGHTLY_OFF, questionNumber); //Assigns the number of points earned by this question
+                    pointsTracker += SLIGHTLY_OFF;
                 }
                 count++; //Increment the count
             }
+            player.SetPointsByQuestion(pointsTracker, questionNumber);
         }
         //This method will check to see if a driver was guessed or not
         public static void ChangePoints(int[] answers, int[] results, Player player, int questionNumber)
@@ -468,6 +560,15 @@ namespace F1_Fantasy
                 Console.WriteLine(players[x].ToString());
             }
         }
+        //Displays the current standings for the drivers
+        public static void DisplayDriverRankings(List<DriverStanding> standings, int count)
+        {
+            Console.WriteLine("Position\t" + "Driver".PadRight(15) + "\tPoints".PadRight(8) + "\tWins");
+            for (int x = 0; x < count; x++)
+            {
+                Console.WriteLine(standings[x].position.PadRight(8) + "\t" + standings[x].Driver.familyName.PadRight(15) + "\t" + standings[x].points.PadRight(8) + standings[x].wins);
+            }
+        }
         //Just something I made that I thought was cool
         public static void F1Car()
         {
@@ -484,5 +585,104 @@ namespace F1_Fantasy
             Console.WriteLine(@"          ------                                                                   -------     ");
             Console.WriteLine("\n");
         }
+        //This will display a menu of application options for the user
+        public static void DisplayMenu()
+        {
+            Console.WriteLine("It's the final few seconds before the lights go out, and the race to the podium begins...\n");
+            Console.WriteLine("Fantasy F1");
+            Console.WriteLine("Please enter an option from the menu\n");
+            Console.WriteLine("1. Current Points");
+            Console.WriteLine("2. Points Earned by Question");
+            Console.WriteLine("3. Current WDC Standings");
+            Console.WriteLine("4. Current Constructor Standings");
+            Console.WriteLine("5. Exit");
+        }
+        //Gets the user input for the main menu
+        public static int GetUserInput()
+        {
+            string userInputString = "";
+            int userInput = 0;
+
+            userInputString = Console.ReadLine();
+
+            while (userInputString != "1" && userInputString != "2" && userInputString != "3" && userInputString != "4" && userInputString != "5") //Ensures that user enters a number from the menu
+            {
+                Console.WriteLine("Please enter a number from the menu");
+                userInputString = Console.ReadLine();
+            }
+            while (!int.TryParse(userInputString, out userInput)) //If the string can't be parsed to a int, then it will repeat and display an error message
+            {
+                Console.WriteLine("Please enter a number from the menu\n");
+                userInputString = Console.ReadLine();
+            }
+            Console.Clear();
+            return userInput;
+        }
+
+        public static Boolean ExitMessage()
+        {
+            Boolean exit = true;
+            Console.WriteLine("Thanks for playing!\n");
+            return exit;
+        }
+    }
+
+    public class Driver
+    {
+        public string driverId { get; set; }
+        public string permanentNumber { get; set; }
+        public string code { get; set; }
+        public string url { get; set; }
+        public string givenName { get; set; }
+        public string familyName { get; set; }
+        public string dateOfBirth { get; set; }
+        public string nationality { get; set; }
+    }
+
+    public class Constructor
+    {
+        public string constructorId { get; set; }
+        public string url { get; set; }
+        public string name { get; set; }
+        public string nationality { get; set; }
+    }
+
+    public class DriverStanding
+    {
+        public string position { get; set; }
+        public string positionText { get; set; }
+        public string points { get; set; }
+        public string wins { get; set; }
+        public Driver Driver { get; set; }
+        public List<Constructor> Constructors { get; set; }
+    }
+
+    public class StandingsList
+    {
+        public string season { get; set; }
+        public string round { get; set; }
+        public List<DriverStanding> DriverStandings { get; set; }
+    }
+
+    public class StandingsTable
+    {
+        public string season { get; set; }
+        public List<StandingsList> StandingsLists { get; set; }
+    }
+
+    public class MRData
+    {
+        public string xmlns { get; set; }
+        public string series { get; set; }
+        public string url { get; set; }
+        public string limit { get; set; }
+        public string offset { get; set; }
+        public string total { get; set; }
+        public StandingsTable StandingsTable { get; set; }
+    }
+
+    public class RootObject
+    {
+        public MRData MRData { get; set; }
     }
 }
