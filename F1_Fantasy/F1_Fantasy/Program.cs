@@ -31,6 +31,12 @@ namespace F1_Fantasy
             //CallWebAPIAsync().Wait();
             var url = "https://ergast.com/api/f1/2019/driverStandings.json";
             var RootObject = _download_serialized_json_data<RootObject>(url);
+            List<DriverStanding> driverStandings = new List<DriverStanding>();
+            for (int x = 0; x < 20; x++) 
+            {
+                driverStandings.Add(RootObject.MRData.StandingsTable.StandingsLists[0].DriverStandings[x]);
+            }
+
             //Console.WriteLine(MRData.StandingsTable.StandingsLists.DriverStandings.Get(0));
 
             SqlConnection cnn = new SqlConnection(conString); //Create a SQL Connection object to connect to the F1 Database
@@ -110,11 +116,17 @@ namespace F1_Fantasy
                     case 2: 
                         playerReport.PrintAllScores(); //Prints all the questions and number of points given by each
                         break;
-                    case 3: 
+                    /*case 3: 
                         sql = @"SELECT * FROM [Formula_1].[dbo].[WDC Rankings] ORDER BY [Results] ASC";
                         rankingType = "Driver Rankings + Points";
                         DisplayRankings(cnn, sql, rankingType);
-                        break;
+                        break;*/
+                    /*case 3:
+                        foreach (string position in DriverStanding)
+                        {
+                            Console.WriteLine(DriverStanding.);
+                        }
+                        break;*/
                     case 4:
                         sql = @"SELECT * FROM [Formula_1].[dbo].[Constructor Rankings] ORDER BY [Results] ASC";
                         rankingType = "Constructor Rankings + Points";
