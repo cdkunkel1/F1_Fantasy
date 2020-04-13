@@ -21,7 +21,9 @@ namespace F1_Fantasy
             
             int[] position = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 };
 
-            int count = 0;
+            int driverCount = 0;
+            int constructorCount = 0;
+            int raceCount = 0;
             string sql = "";
             string conString = @"Data Source = (LocalDB)\Formula_1; Initial Catalog = Formula_1; Integrated Security = True"; //This is the connection string for the F1 database
             int scoringStyle = 1; //Will be used to indicate a different type of scoring when using the Ranking() method
@@ -29,16 +31,32 @@ namespace F1_Fantasy
             int menuChoice = 0;
             string rankingType = "";
 
-            var url = "https://ergast.com/api/f1/2019/driverStandings.json"; //URL link for the API
+            var url = "https://ergast.com/api/f1/current/driverStandings.json"; //URL link for the WDC Rankings API
             var RootObject = _download_serialized_json_data<RootObject>(url); //Deserialize the json data into objects
-            List<DriverStanding> standings = new List<DriverStanding>(); //Create a new list that will make it easier to access the API data
+            List<DriverStanding> driverStandings = new List<DriverStanding>(); //Create a new list that will make it easier to access the API data
             foreach(DriverStanding standing in RootObject.MRData.StandingsTable.StandingsLists[0].DriverStandings) //Populate the list with each value found in driver standings
             {
-                standings.Add(RootObject.MRData.StandingsTable.StandingsLists[0].DriverStandings[count]);
-                count++; //Keep track of how many elements were added to the list
+                driverStandings.Add(RootObject.MRData.StandingsTable.StandingsLists[0].DriverStandings[driverCount]);
+                driverCount++; //Keep track of how many elements were added to the list
             }
-            
-            //Console.WriteLine(driverStandings[0].Constructors[0].name);
+
+            url = "https://ergast.com/api/f1/current/constructorStandings.json"; //URL link for the constructor standings API
+            RootObject = _download_serialized_json_data<RootObject>(url); //Deserialize the json data into objects
+            List<ConstructorStanding> constructorStandings = new List<ConstructorStanding>(); //Create a new list that will make it easier to access the API data
+            foreach (ConstructorStanding standing in RootObject.MRData.StandingsTable.StandingsLists[0].ConstructorStandings) //Populate the list with each value found in driver standings
+            {
+                constructorStandings.Add(RootObject.MRData.StandingsTable.StandingsLists[0].ConstructorStandings[constructorCount]);
+                constructorCount++; //Keep track of how many elements were added to the list
+            }
+
+            url = "https://ergast.com/api/f1/current.json"; //URL link for the race schedule API
+            RootObject = _download_serialized_json_data<RootObject>(url); //Deserialize the json data into objects
+            List<Race> raceSchedule = new List<Race>(); //Create a new list that will make it easier to access the API data
+            foreach (Race race in RootObject.MRData.RaceTable.Races) //Populate the list with each value found in driver standings
+            {
+                raceSchedule.Add(RootObject.MRData.RaceTable.Races[raceCount]);
+                raceCount++; //Keep track of how many elements were added to the list
+            }
 
             SqlConnection cnn = new SqlConnection(conString); //Create a SQL Connection object to connect to the F1 Database
             OpenConnection(cnn); //Open the connection to the database
@@ -117,20 +135,16 @@ namespace F1_Fantasy
                     case 2: 
                         playerReport.PrintAllScores(); //Prints all the questions and number of points given by each
                         break;
-                    /*case 3: 
-                        sql = @"SELECT * FROM [Formula_1].[dbo].[WDC Rankings] ORDER BY [Results] ASC";
-                        rankingType = "Driver Rankings + Points";
-                        DisplayRankings(cnn, sql, rankingType);
-                        break;*/
                     case 3:
-                        DisplayDriverRankings(standings, count);
+                        DisplayDriverRankings(driverStandings, driverCount);
                         break;
                     case 4:
-                        sql = @"SELECT * FROM [Formula_1].[dbo].[Constructor Rankings] ORDER BY [Results] ASC";
-                        rankingType = "Constructor Rankings + Points";
-                        //DisplayConstructorRankings(standings, count);
+                        DisplayConstructorRankings(constructorStandings, constructorCount);
                         break;
-                    case 5: 
+                    case 5:
+                        DisplayRaceSchedule(raceSchedule, raceCount);
+                        break;
+                    case 6: 
                         exit = ExitMessage();
                         break;
                 }
@@ -140,7 +154,7 @@ namespace F1_Fantasy
             }
             CloseConnection(cnn);
         }
-
+        //Method that will pull the Json data from the API and deserialize it
         private static T _download_serialized_json_data<T>(string url) where T : new()
         {
             using (var w = new WebClient())
@@ -156,26 +170,6 @@ namespace F1_Fantasy
                 return !string.IsNullOrEmpty(json_data) ? JsonConvert.DeserializeObject<T>(json_data) : new T();
             }
         }
-
-        /*static async Task CallWebAPIAsync()
-        {
-            using (var client = new HttpClient())
-            {
-                client.BaseAddress = new Uri(@"https://ergast.com/");
-                client.DefaultRequestHeaders.Accept.Clear();
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                //GET Method  
-                HttpResponseMessage response = await client.GetAsync("api/f1/2019/driverStandings.json");
-                if (response.IsSuccessStatusCode)
-                {
-                    Console.WriteLine("Success");
-                }
-                else
-                {
-                    Console.WriteLine("Internal server Error");
-                }
-            }
-        }*/
 
         //This method will open a connection to the SQL server
         public static void OpenConnection(SqlConnection cnn)
@@ -569,6 +563,25 @@ namespace F1_Fantasy
                 Console.WriteLine(standings[x].position.PadRight(8) + "\t" + standings[x].Driver.familyName.PadRight(15) + "\t" + standings[x].points.PadRight(8) + standings[x].wins);
             }
         }
+        //Displays the current standings for the constructors
+        public static void DisplayConstructorRankings(List<ConstructorStanding> standings, int count)
+        {
+            Console.WriteLine("Position\t" + "Constructor".PadRight(15) + "\tPoints".PadRight(8) + "\tWins");
+            for (int x = 0; x < count; x++)
+            {
+                Console.WriteLine(standings[x].position.PadRight(8) + "\t" + standings[x].Constructor.name.PadRight(15) + "\t" + standings[x].points.PadRight(8) + standings[x].wins);
+            }
+        }
+        //Displays the schedule for the season
+        public static void DisplayRaceSchedule(List<Race> schedule, int count)
+        {
+            Console.WriteLine("Round\t" + "Race".PadRight(30) + "\tDate".PadRight(10) + "\tTrack Name");
+            for (int x = 0; x < count; x++)
+            {
+                Console.WriteLine(schedule[x].round.PadRight(5) + "\t" + schedule[x].raceName.PadRight(30) + "\t" + schedule[x].date.PadRight(10) + "\t" + schedule[x].Circuit.circuitName);
+            }
+        }
+
         //Just something I made that I thought was cool
         public static void F1Car()
         {
@@ -595,7 +608,8 @@ namespace F1_Fantasy
             Console.WriteLine("2. Points Earned by Question");
             Console.WriteLine("3. Current WDC Standings");
             Console.WriteLine("4. Current Constructor Standings");
-            Console.WriteLine("5. Exit");
+            Console.WriteLine("5. Race Schedule");
+            Console.WriteLine("6. Exit");
         }
         //Gets the user input for the main menu
         public static int GetUserInput()
@@ -605,7 +619,7 @@ namespace F1_Fantasy
 
             userInputString = Console.ReadLine();
 
-            while (userInputString != "1" && userInputString != "2" && userInputString != "3" && userInputString != "4" && userInputString != "5") //Ensures that user enters a number from the menu
+            while (userInputString != "1" && userInputString != "2" && userInputString != "3" && userInputString != "4" && userInputString != "5" && userInputString != "6") //Ensures that user enters a number from the menu
             {
                 Console.WriteLine("Please enter a number from the menu");
                 userInputString = Console.ReadLine();
@@ -657,10 +671,20 @@ namespace F1_Fantasy
         public List<Constructor> Constructors { get; set; }
     }
 
+    public class ConstructorStanding
+    {
+        public string position { get; set; }
+        public string positionText { get; set; }
+        public string points { get; set; }
+        public string wins { get; set; }
+        public Constructor Constructor { get; set; }
+    }
+
     public class StandingsList
     {
         public string season { get; set; }
         public string round { get; set; }
+        public List<ConstructorStanding> ConstructorStandings { get; set; }
         public List<DriverStanding> DriverStandings { get; set; }
     }
 
@@ -668,6 +692,39 @@ namespace F1_Fantasy
     {
         public string season { get; set; }
         public List<StandingsList> StandingsLists { get; set; }
+    }
+
+    public class Location
+    {
+        public string lat { get; set; }
+        public string @long { get; set; }
+        public string locality { get; set; }
+        public string country { get; set; }
+    }
+
+    public class Circuit
+    {
+        public string circuitId { get; set; }
+        public string url { get; set; }
+        public string circuitName { get; set; }
+        public Location Location { get; set; }
+    }
+
+    public class Race
+    {
+        public string season { get; set; }
+        public string round { get; set; }
+        public string url { get; set; }
+        public string raceName { get; set; }
+        public Circuit Circuit { get; set; }
+        public string date { get; set; }
+        public string time { get; set; }
+    }
+
+    public class RaceTable
+    {
+        public string season { get; set; }
+        public List<Race> Races { get; set; }
     }
 
     public class MRData
@@ -679,6 +736,7 @@ namespace F1_Fantasy
         public string offset { get; set; }
         public string total { get; set; }
         public StandingsTable StandingsTable { get; set; }
+        public RaceTable RaceTable { get; set; }
     }
 
     public class RootObject
