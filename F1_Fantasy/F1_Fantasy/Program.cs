@@ -21,6 +21,7 @@ namespace F1_Fantasy
             
             int[] position = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 };
 
+            int count = 0;
             string sql = "";
             string conString = @"Data Source = (LocalDB)\Formula_1; Initial Catalog = Formula_1; Integrated Security = True"; //This is the connection string for the F1 database
             int scoringStyle = 1; //Will be used to indicate a different type of scoring when using the Ranking() method
@@ -28,16 +29,16 @@ namespace F1_Fantasy
             int menuChoice = 0;
             string rankingType = "";
 
-            //CallWebAPIAsync().Wait();
-            var url = "https://ergast.com/api/f1/2019/driverStandings.json";
-            var RootObject = _download_serialized_json_data<RootObject>(url);
-            List<DriverStanding> driverStandings = new List<DriverStanding>();
-            for (int x = 0; x < 20; x++) 
+            var url = "https://ergast.com/api/f1/2019/driverStandings.json"; //URL link for the API
+            var RootObject = _download_serialized_json_data<RootObject>(url); //Deserialize the json data into objects
+            List<DriverStanding> standings = new List<DriverStanding>(); //Create a new list that will make it easier to access the API data
+            foreach(DriverStanding standing in RootObject.MRData.StandingsTable.StandingsLists[0].DriverStandings) //Populate the list with each value found in driver standings
             {
-                driverStandings.Add(RootObject.MRData.StandingsTable.StandingsLists[0].DriverStandings[x]);
+                standings.Add(RootObject.MRData.StandingsTable.StandingsLists[0].DriverStandings[count]);
+                count++; //Keep track of how many elements were added to the list
             }
-
-            //Console.WriteLine(MRData.StandingsTable.StandingsLists.DriverStandings.Get(0));
+            
+            //Console.WriteLine(driverStandings[0].Constructors[0].name);
 
             SqlConnection cnn = new SqlConnection(conString); //Create a SQL Connection object to connect to the F1 Database
             OpenConnection(cnn); //Open the connection to the database
@@ -121,16 +122,13 @@ namespace F1_Fantasy
                         rankingType = "Driver Rankings + Points";
                         DisplayRankings(cnn, sql, rankingType);
                         break;*/
-                    /*case 3:
-                        foreach (string position in DriverStanding)
-                        {
-                            Console.WriteLine(DriverStanding.);
-                        }
-                        break;*/
+                    case 3:
+                        DisplayDriverRankings(standings, count);
+                        break;
                     case 4:
                         sql = @"SELECT * FROM [Formula_1].[dbo].[Constructor Rankings] ORDER BY [Results] ASC";
                         rankingType = "Constructor Rankings + Points";
-                        DisplayRankings(cnn, sql, rankingType);
+                        //DisplayConstructorRankings(standings, count);
                         break;
                     case 5: 
                         exit = ExitMessage();
@@ -563,19 +561,13 @@ namespace F1_Fantasy
             }
         }
         //Displays the current standings for the drivers
-        public static void DisplayRankings(SqlConnection cnn, string sql, string rankings)
+        public static void DisplayDriverRankings(List<DriverStanding> standings, int count)
         {
-            SqlCommand command = new SqlCommand(sql, cnn); //Executes the sql command to return the table
-            SqlDataReader dataReader = command.ExecuteReader(); //Begin to read the table
-
-            Console.WriteLine(rankings);
-            while (dataReader.Read()) //Reads the next line, stops if the results column is null 
+            Console.WriteLine("Position\t" + "Driver".PadRight(15) + "\tPoints".PadRight(8) + "\tWins");
+            for (int x = 0; x < count; x++)
             {
-                Console.WriteLine(dataReader.GetInt32(4) + "\t" + dataReader.GetValue(0).ToString().PadRight(20) + "\t" + dataReader.GetInt32(5)); 
+                Console.WriteLine(standings[x].position.PadRight(8) + "\t" + standings[x].Driver.familyName.PadRight(15) + "\t" + standings[x].points.PadRight(8) + standings[x].wins);
             }
-            //Close the connection
-            dataReader.Close();
-            command.Dispose();
         }
         //Just something I made that I thought was cool
         public static void F1Car()
