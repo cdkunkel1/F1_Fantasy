@@ -8,6 +8,9 @@ using System.Net.Http.Headers;
 using System.Collections.Generic;
 using System.Net;
 using Newtonsoft.Json;
+using System.Threading;
+using System.Media;
+using WMPLib;
 
 namespace F1_Fantasy
 {
@@ -117,10 +120,18 @@ namespace F1_Fantasy
 
             sql = @"SELECT * FROM [Formula_1].[dbo].[Y/N Scenarios]"; //SQL statement to select data on whether or not certain events happened. Potential points is 40
             scoringStyle = 2;
-            CheckIfPicked(cnn, players, sql, scoringStyle, question.GetQuestionNumber(13)); 
-
+            CheckIfPicked(cnn, players, sql, scoringStyle, question.GetQuestionNumber(13));
 
             PlayerReports playerReport = new PlayerReports(players, question.GetQuestionNameArray(), question.GetQuestionNumberArray());
+            WindowsMediaPlayer chime = new WindowsMediaPlayer(); //Using this object to play the Krofty sound effect
+            chime.URL = "Chime.mp3"; //Sets the mp3 file as the sound
+
+            DisplayLights(chime); //Displays the lights out visual
+            
+            WindowsMediaPlayer krofty = new WindowsMediaPlayer(); //Using this object to play the Krofty sound effect
+            krofty.URL = "Krofty.mp3"; //Sets the mp3 file as the sound
+            krofty.controls.play(); //Actually plays the sound
+            CarMoving(); //Displays the car moving across the screen
 
             while (exit == false) //Continues until the user chooses to quit
             {
@@ -144,7 +155,9 @@ namespace F1_Fantasy
                     case 5:
                         DisplayRaceSchedule(raceSchedule, raceCount);
                         break;
-                    case 6: 
+                    case 6:
+                        CarMoving();
+                        Console.Clear();
                         exit = ExitMessage();
                         break;
                 }
@@ -581,7 +594,6 @@ namespace F1_Fantasy
                 Console.WriteLine(schedule[x].round.PadRight(5) + "\t" + schedule[x].raceName.PadRight(30) + "\t" + schedule[x].date.PadRight(10) + "\t" + schedule[x].Circuit.circuitName);
             }
         }
-
         //Just something I made that I thought was cool
         public static void F1Car()
         {
@@ -598,10 +610,122 @@ namespace F1_Fantasy
             Console.WriteLine(@"          ------                                                                   -------     ");
             Console.WriteLine("\n");
         }
+        //Just something I made that I thought was cool
+        public static string[] F1CarArray()
+        {
+            string[] f1Car = new string[11];
+
+            f1Car[0] = (@"                                  __________________                                                          ");
+            f1Car[1] = (@"__________                     /                    |                                                         ");
+            f1Car[2] = (@"\         \                 /               /      |           _____                                          ");
+            f1Car[3] = (@" \         \             /               /         |         /       \                                        ");
+            f1Car[4] = (@"  \         \  _____  /                /           \      /             \                                     ");
+            f1Car[5] = (@"    ___    ____                                     ---/                  \ _____   ____                      ");
+            f1Car[6] = (@"        /        \            ______________              \________________/     /        \                   ");
+            f1Car[7] = (@"       |          |                                                             |          | \                ");
+            f1Car[8] = (@"       |          |                                                             |          |    \  _________  ");
+            f1Car[9] = (@"        \        /  ___________________________________________________________  \        /  ___  |_________| ");
+           f1Car[10] = (@"          ------                                                                   -------                    ");
+
+            return f1Car;
+        }
+        //Method that creates a list to hold the light
+        public static string[] LightsOut()
+        {
+            string[] f1Lights = new string[12];
+
+            f1Lights[0] = @"    ________________            ";
+            f1Lights[1] = @"   /                  \         ";
+            f1Lights[2] = @"  /                    \        ";
+            f1Lights[3] = @" /                      \       ";
+            f1Lights[4] = @"|                        |      ";
+            f1Lights[5] = @"|                        |      ";
+            f1Lights[6] = @"|                        |      ";
+            f1Lights[7] = @"|                        |      ";
+            f1Lights[8] = @" \                      /       ";
+            f1Lights[9] = @"  \                    /        ";
+           f1Lights[10] = @"   \                  /         ";
+           f1Lights[11] = @"     ----------------           ";
+
+            return f1Lights;
+        }
+        //Method that displays the lights like at the start of a race
+        public static void DisplayLights(WindowsMediaPlayer chime)
+        { 
+            string[] f1Lights = LightsOut();
+            for (int x = 1; x <= 5; x++) //Displays five lights
+            {
+                if (x == 1) //Each iteration, another light will appear
+                {
+                    chime.controls.play();
+                    for (int j = 0; j < 12; j++)
+                    {
+                        Console.WriteLine(f1Lights[j]);
+                    }
+                    Thread.Sleep(900);
+                    Console.Clear();
+                }
+                if (x == 2)
+                {
+                    chime.controls.play();
+                    for (int j = 0; j < 12; j++)
+                    {
+                        Console.WriteLine(f1Lights[j] + f1Lights[j]);
+                    }
+                    Thread.Sleep(900);
+                    Console.Clear();
+                }
+                if (x == 3)
+                {
+                    chime.controls.play();
+                    for (int j = 0; j < 12; j++)
+                    {
+                        Console.WriteLine(f1Lights[j] + f1Lights[j] + f1Lights[j]);
+                    }
+                    Thread.Sleep(900);
+                    Console.Clear();
+                }
+                if (x == 4)
+                {
+                    chime.controls.play();
+                    for (int j = 0; j < 12; j++)
+                    {
+                        Console.WriteLine(f1Lights[j] + f1Lights[j] + f1Lights[j] + f1Lights[j]);
+                    }
+                    Thread.Sleep(900);
+                    Console.Clear();
+                }
+                if (x == 5)
+                {
+                    chime.controls.play();
+                    for (int j = 0; j < 12; j++)
+                    {
+                        Console.WriteLine(f1Lights[j] + f1Lights[j] +f1Lights[j] + f1Lights[j] + f1Lights[j]);
+                    }
+                    Thread.Sleep(2000);
+                    Console.Clear();
+                }
+            }
+        }
+        //Method that displays the car moving across the screen
+        public static void CarMoving()
+        {
+            String[] f1Car = F1CarArray(); //The car is stored in an array with each line being an element
+            
+            for (int x = 80; x < 160;) //Will eventually be 180 spaces to the right
+            {
+                for (int j = 0; j < 11; j++) //Outputs the car
+                {
+                    Console.WriteLine(f1Car[j].PadLeft(x, ' ')); //It moves by padding the left side with a certain amount of characters
+                }
+                Thread.Sleep(50); //Waits 50 milliseconds before clearing
+                Console.Clear();
+                x += 5;
+            }
+        }
         //This will display a menu of application options for the user
         public static void DisplayMenu()
         {
-            Console.WriteLine("It's the final few seconds before the lights go out, and the race to the podium begins...\n");
             Console.WriteLine("Fantasy F1");
             Console.WriteLine("Please enter an option from the menu\n");
             Console.WriteLine("1. Current Points");
